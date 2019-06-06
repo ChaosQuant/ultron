@@ -1,0 +1,23 @@
+[
+    {
+        "conn": "",
+        "factors": [
+            {
+                "model": "model",
+                "table": "Experimental",
+                "trade_date": "trade_date",
+                "code": "code",
+                "columns": [
+                    "ROEAfterNonRecurring",
+                    "CHV",
+                    "IVR",
+                    "EPAfterNonRecurring",
+                    "DROEAfterNonRecurring",
+                    "CFinc1",
+                    "DRevenue",
+                    "Revenue"
+                ]
+            }
+        ]
+    }
+]
