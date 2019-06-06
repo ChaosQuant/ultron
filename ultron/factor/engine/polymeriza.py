@@ -6,11 +6,9 @@ import importlib
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import select, and_
-#from models import Market,RiskExposure
 from ultron.factor.engine.raw_factors import RawFactors
 
 class Polymerization(object):
-    
     def __init__(self, common_setting,
                  file_setting='./factors.json'):
         self._file_setting = file_setting
