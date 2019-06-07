@@ -9,8 +9,8 @@ from sqlalchemy import select, and_
 from ultron.factor.engine.raw_factors import RawFactors
 
 class Polymerization(object):
-    def __init__(self, common_setting,
-                 file_setting='./factors.json'):
+    def __init__(self, common_setting = None,
+                 file_setting = None):
         self._file_setting = file_setting
         self._common_setting = common_setting
         self._risk_info = {}
@@ -19,23 +19,25 @@ class Polymerization(object):
    
     def _load_setting(self):
         # 通用数据
-        with open(self._common_setting) as f:
-            common_info = json.load(f)
-            self._market_info['conn'] = sa.create_engine(common_info['market']['conn'])
-            self._risk_info['conn'] = sa.create_engine(common_info['risk']['conn'])
-            self._market_info['table'] = importlib.import_module(common_info['market']['model']).__getattribute__(
+        if self._file_setting is not None:
+            with open(self._common_setting) as f:
+                common_info = json.load(f)
+                self._market_info['conn'] = sa.create_engine(common_info['market']['conn'])
+                self._risk_info['conn'] = sa.create_engine(common_info['risk']['conn'])
+                self._market_info['table'] = importlib.import_module(common_info['market']['model']).__getattribute__(
                                          common_info['market']['table'])
-            self._risk_info['table'] = importlib.import_module(common_info['risk']['model']).__getattribute__(
+                self._risk_info['table'] = importlib.import_module(common_info['risk']['model']).__getattribute__(
                                          common_info['risk']['table'])
-            self._risk_info['trade_date'] = self._risk_info['table'].__dict__[common_info['risk']['trade_date']]
+                self._risk_info['trade_date'] = self._risk_info['table'].__dict__[common_info['risk']['trade_date']]
             
-            self._market_info['trade_date'] = self._market_info['table'].__dict__[common_info['market']['trade_date']]
-            self._market_info['tclose'] = self._market_info['table'].__dict__[common_info['market']['tclose']]
-            self._market_info['code'] = self._market_info['table'].__dict__[common_info['market']['code']]
-            self._market_info['columns'] = common_info['market']['columns']
+                self._market_info['trade_date'] = self._market_info['table'].__dict__[common_info['market']['trade_date']]
+                self._market_info['tclose'] = self._market_info['table'].__dict__[common_info['market']['tclose']]
+                self._market_info['code'] = self._market_info['table'].__dict__[common_info['market']['code']]
+                self._market_info['columns'] = common_info['market']['columns']
         #因子数据
-        with open(self._file_setting) as f:
-            self._factors_setting = json.load(f)
+        if self._common_setting is not None:
+            with open(self._file_setting) as f:
+                self._factors_setting = json.load(f)
     
     def on_return_by_interval(self, trade_date_list):
         db_columns = []
@@ -69,10 +71,10 @@ class Polymerization(object):
         df['trade_date'] = pd.to_datetime(df['trade_date'])
         df.sort_values(by='trade_date')
         return df
-        
-    def on_work_by_factors(self, trade_date_list):
+    
+    def on_work_by_factors(self, trade_date_list, factors_setting):
         factors_sets = None
-        for setting in self._factors_setting:
+        for setting in factors_setting:
             conn = setting['conn']
             factors_list = setting['factors']
             for factor in factors_list:
@@ -119,9 +121,13 @@ class Polymerization(object):
         new_factors_sets = pd.DataFrame(factors_list)
         return new_factors_sets.merge(return_sets, on=['code', 'trade_date'])
     
+    def custom_work_by_interval(self, trade_date_list, main_type, factor_info):
+        factors_setting = json.loads(factor_info)
+        return self.on_work_by_factors(trade_date_list[:-1], factors_setting)
+        
     def on_work_by_interval(self, trade_date_list, main_type=1, is_rename = 1):
         trade_date_list.sort(reverse=False)
-        factors_sets = self.on_work_by_factors(trade_date_list[:-1])
+        factors_sets = self.on_work_by_factors(trade_date_list[:-1], self._factors_setting)
         #获取当期收益率
         now_return_sets = self.on_return_by_interval(trade_date_list[:-1])
         factors_sets = factors_sets.merge(now_return_sets,on=['code','trade_date']).rename(columns={self._market_info['tclose'].name:'oclosePrice'})
