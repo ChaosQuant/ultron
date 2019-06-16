@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import pdb
 import json
 import datetime
 import importlib
@@ -129,10 +130,18 @@ class Polymerization(object):
         trade_date_list.sort(reverse=False)
         factors_sets = self.on_work_by_factors(trade_date_list[:-1], self._factors_setting)
         #获取当期收益率
+        all_return_sets = self.on_return_by_interval(trade_date_list)
+        
+        now_return_sets = all_return_sets.set_index('trade_date').loc[trade_date_list[:-1]].reset_index()
+        factors_sets = factors_sets.merge(now_return_sets,on=['code','trade_date']).rename(columns={self._market_info['tclose'].name:'oclosePrice'})
+        return_sets = all_return_sets.set_index('trade_date').loc[trade_date_list[1:]].reset_index()
+        return_sets = return_sets.rename(columns={self._market_info['tclose'].name:'nclosePrice'})
+        '''
         now_return_sets = self.on_return_by_interval(trade_date_list[:-1])
         factors_sets = factors_sets.merge(now_return_sets,on=['code','trade_date']).rename(columns={self._market_info['tclose'].name:'oclosePrice'})
         return_sets = self.on_return_by_interval(trade_date_list[1:])
         return_sets = return_sets.rename(columns={self._market_info['tclose'].name:'nclosePrice'})
+        '''
         if main_type == 1: # 当前日期为T
             factors_sets = self.on_main_factors(trade_date_list, factors_sets, return_sets)
         else: # 当前日期为T+1
