@@ -6,7 +6,7 @@ import os
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.0.1"
+VERSION = "0.0.7"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
@@ -20,6 +20,7 @@ setup(
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     url=URL,
+    license="Apache License",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -33,7 +34,8 @@ setup(
         'scikit-learn==0.20.2',
         'scipy==1.2.1',
         'SQLAlchemy==1.3.1',
-        'tornado==6.0.1',
-        'uqer==1.3.3'
+        'uqer==1.3.3',
+        'redis==2.10.6',
+        'celery==4.3.0'
     ]
 )
