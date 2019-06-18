@@ -17,30 +17,19 @@ class AppEngine(object):
             self._port = config.redis_port
             self._pwd = config.redis_pwd
             
-    def create_engine(self, task_name):
+    def create_engine(self, task_name, module_list = []):
         redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/1'
         app = Celery(task_name, broker=redis_url,
                     backend=redis_url)
-        self._app = app
-        return self._app
-    
-    def async_result(self):
-        asynct = AsyncResult(id="ed88fa52-11ea-4873-b883-b6e0f00f3ef3", app=self._app)
-        if asynct.successful():
-            result = asynct.get()
-            print(result)
-            # result.forget() # 将结果删除
-        elif asynct.failed():
-            print('执行失败')
-        elif asynct.status == 'PENDING':
-            print('任务等待中被执行')
-        elif asynct.status == 'RETRY':
-            print('任务异常后正在重试')
-        elif asynct.status == 'STARTED':
-            print('任务已经开始被执行')
+        class Config:
+            CELERY_TIMEZONE = 'Asia/Shanghai'
+            if len(module_list) > 0:
+                CELERY_IMPORTS = tuple(module_list)
+        app.config_from_object(Config)
+        return app
+        
 
         
         
  
 create_app = AppEngine().create_engine
-async_result = AppEngine().async_result
