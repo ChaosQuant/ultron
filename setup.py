@@ -6,7 +6,7 @@ import os
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.0.7"
+VERSION = "0.0.9"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
@@ -35,7 +35,9 @@ setup(
         'scipy==1.2.1',
         'SQLAlchemy==1.3.1',
         'uqer==1.3.3',
-        'redis==2.10.6',
-        'celery==4.3.0'
+        'redis==3.2.0',
+        'celery==4.3.0',
+        'gevent==1.4.0',
+        'Twisted==18.9.0'
     ]
 )
