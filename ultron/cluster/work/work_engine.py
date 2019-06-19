@@ -51,7 +51,7 @@ class WorkEngine(object):
         last_time = datetime.datetime.now()
         while True:
             now_time = datetime.datetime.now()
-            if (now_time - last_time).seconds > 600: #发送心跳包
+            if (now_time - last_time).seconds > 20: #发送心跳包
                 task = {'name':'login','opcode':'heart_tick'}
                 self._module_dict[task['name']].process_respone(task)
                 last_time = now_time
