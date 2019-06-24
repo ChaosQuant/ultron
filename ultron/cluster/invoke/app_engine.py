@@ -12,13 +12,15 @@ class AppEngine(object):
             self._host = kwargs['host']
             self._port = kwargs['port']
             self._port = kwargs['pwd']
+            self._db = kwargs['db']
         else:
             self._host = config.redis_host
             self._port = config.redis_port
             self._pwd = config.redis_pwd
+            self._db = config.redis_db
             
     def create_engine(self, task_name, module_list = []):
-        redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/1'
+        redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
         app = Celery(task_name, broker=redis_url,
                     backend=redis_url)
         class Config:

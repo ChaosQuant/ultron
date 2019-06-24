@@ -37,7 +37,6 @@ class SubmitTask(object):
         # 压缩
         zip_compress(packet, file_name)
         #上传文件
-        pdb.set_trace()
         with open(os.path.join('./', file_name) ,'rb') as f:
             content = f.read()
             upload_info['file_info'] = base64.b64encode(content).decode()

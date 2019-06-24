@@ -246,7 +246,7 @@ class SingleRedisClient(Redis):
             self.delete(*keys)
             return True
         return self.robust(_clean, pattern)
-
+    
     def hmgetall(self, *names):
         def _hmgetall(*_names):
             with self.pipeline(transaction=False) as ppl:

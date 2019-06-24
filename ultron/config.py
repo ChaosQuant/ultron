@@ -2,3 +2,4 @@
 redis_host = ''
 redis_port = 
 redis_pwd = ''
+redis_db = 1
