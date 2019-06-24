@@ -6,7 +6,7 @@ import os
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.0.9"
+VERSION = "0.1.0"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
@@ -38,6 +38,7 @@ setup(
         'redis==3.2.0',
         'celery==4.3.0',
         'gevent==1.4.0',
-        'Twisted==18.9.0'
+        'Twisted==18.9.0',
+        'protobuf==3.7.0'
     ]
 )
