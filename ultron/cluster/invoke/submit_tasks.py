@@ -11,7 +11,7 @@ from ultron.utilities.redis.redis_client import RedisClient
 from ultron.utilities.singleton import Singleton
 from ultron.utilities.zlib_engine import zip_compress,unzip_compress
 from ultron.utilities.short_uuid import uuid, decode
-import ultron.config as config
+from ultron.config import config_setting
 
 @six.add_metaclass(Singleton)
 class SubmitTask(object):
@@ -21,9 +21,9 @@ class SubmitTask(object):
                                           port=kwargs['port'],
                                           password=kwargs['pwd'])
         else:
-            self._redis_client = RedisClient(host=config.redis_host,
-                                          port=config.redis_port,
-                                          password=config.redis_pwd)
+            self._redis_client = RedisClient(host=config_setting.queue_host,
+                                          port=config_setting.queue_port,
+                                          password=config_setting.queue_pwd)
     
     def submit_packet(self, uid, packet):
         upload_info = {}

@@ -3,7 +3,7 @@ import six
 from ultron.utilities.singleton import Singleton
 from ultron.utilities.redis.redis_client import RedisClient
 import ultron.proto.cache_data_pb2
-import ultron.config as config
+from ultron.config import config_setting
 import zlib
 import base64
 import pdb
@@ -16,9 +16,9 @@ class CacheData(object):
             self._port = kwargs['port']
             self._port = kwargs['pwd']
         else:
-            self._host = config.redis_host
-            self._port = config.redis_port
-            self._pwd = config.redis_pwd
+            self._host = config_setting.queue_host
+            self._port = config_setting.queue_port
+            self._pwd = config_setting.queue_pwd
         self._queue = 'ultron:cache'
         self._zip_level = 9
         #创建redis连接

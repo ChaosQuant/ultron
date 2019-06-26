@@ -6,6 +6,7 @@ import importlib
 from gevent.queue import Queue
 from ultron.utilities.redis.redis_client import RedisClient
 from ultron.cluster.central.extern_modules.modules_info import moddules_info
+from ultron.config import config_setting
 
 LOGIN_QUEUE = 'ultron:work:login'
 CTASK_QUEUE = 'ultron:work:ctask' #获取启动TASK指令通道
@@ -14,9 +15,9 @@ UPDATE_QUEUE = 'ultron:work:update' #同步代码文件
 class CentralEngine(object):
     def __init__(self, **kwargs):
         self._module_dict = {}
-        self._redis_client = RedisClient(host=kwargs['host'],
-                                          port=kwargs['port'],
-                                          password =kwargs['pwd'])
+        self._redis_client = RedisClient(host=config_setting.queue_host,
+                                          port=config_setting.queue_port,
+                                          password=config_setting.queue_pwd)
         self._queue_list = [LOGIN_QUEUE,CTASK_QUEUE,UPDATE_QUEUE]
         self._task_queue = Queue() #
         self.init_modules()
