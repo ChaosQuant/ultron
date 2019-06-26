@@ -36,6 +36,7 @@ class CacheData(object):
     
     def get_cache(self, session, key):
         base64_values_str = self._redis_client.hget(self._queue, str(key) + str(session))
+        self._redis_client.hdel(self._queue, str(key) + str(session))
         zlilb_values = base64.b64decode(base64_values_str)
         cache_data_pb = ultron.proto.cache_data_pb2.CacheData()
         cache_data_pb.ParseFromString(zlilb_values)
