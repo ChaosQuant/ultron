@@ -4,20 +4,25 @@ import json
 import datetime
 import gevent
 import importlib
+import hashlib
 from gevent.queue import Queue
 from ultron.utilities.redis.redis_client import RedisClient
 from ultron.cluster.work.extern_modules.modules_info import moddules_info
+from ultron.utilities.short_uuid import unique_machine
+from ultron.config import config_setting
 
 
 class WorkEngine(object):
     def __init__(self, **kwargs):
         self._module_dict = {}
-        self._redis_client = RedisClient(host=kwargs['host'],
-                                          port=kwargs['port'],
-                                          password =kwargs['pwd'])
-        self._token = kwargs['token']
-        self._wid = kwargs['wid']
+        self._redis_client = RedisClient(host=config_setting.queue_host,
+                                          port=config_setting.queue_port,
+                                          password=config_setting.queue_pwd)
+        self._secret_key = 'd6f89b09'
+        self._wid = unique_machine
         self._queue_list = ['ultron:work:work_id:'+str(self._wid)]
+        #生成token
+        self._token = hashlib.sha1((self._secret_key + self._wid.replace('-','')).encode()).hexdigest()
         self._task_queue = Queue() #
         self.init_modules()
         gevent.spawn(self._get_task)

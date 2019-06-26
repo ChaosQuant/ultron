@@ -3,7 +3,7 @@ from celery.result import AsyncResult
 from celery.schedules import crontab
 import six
 from ultron.utilities.singleton import Singleton
-import ultron.config as config
+from ultron.config import config_setting
 
 @six.add_metaclass(Singleton)
 class AppEngine(object):
@@ -14,10 +14,10 @@ class AppEngine(object):
             self._port = kwargs['pwd']
             self._db = kwargs['db']
         else:
-            self._host = config.redis_host
-            self._port = config.redis_port
-            self._pwd = config.redis_pwd
-            self._db = config.redis_db
+            self._host = config_setting.queue_host
+            self._port = config_setting.queue_port
+            self._pwd = config_setting.queue_pwd
+            self._db = config_setting.queue_db
             
     def create_engine(self, task_name, module_list = []):
         redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)

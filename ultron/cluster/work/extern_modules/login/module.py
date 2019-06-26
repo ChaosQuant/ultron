@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import socket
 from ultron.cluster.work.extern_modules.base_module import BaseModule
 
 class Module(BaseModule):
@@ -16,6 +17,7 @@ class Module(BaseModule):
         login_info = {'name':self._namespace,
                       'opcode':'login_in',
                       'wid':self._wid, 'token':self._token,
+                      'ip': socket.gethostbyname(socket.getfqdn(socket.gethostname())),
                       'login_time': datetime.datetime.now().strftime("%Y-%m-%d %H:%S:%M")}
         self._redis_client.hset('ultron:work:login', self._wid + login_info['opcode'], json.dumps(login_info))
     

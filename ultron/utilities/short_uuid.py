@@ -124,12 +124,16 @@ class ShortUUID(object):
         """
         factor = math.log(256) / math.log(self._alpha_len)
         return int(math.ceil(factor * num_bytes))
+    
+    def unique_machine(self):
+        return str(_uu.uuid1())[-27:]
 
 
 _global_instance = ShortUUID()
 encode = _global_instance.encode
 decode = _global_instance.decode
 uuid = _global_instance.uuid
+unique_machine = _global_instance.unique_machine()
 random = _global_instance.random
 get_alphabet = _global_instance.get_alphabet
 set_alphabet = _global_instance.set_alphabet
