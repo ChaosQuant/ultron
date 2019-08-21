@@ -4,9 +4,9 @@ from setuptools import find_packages
 import io
 import os
 
-PACKAGE = "ultron"
-NAME = "ultron"
-VERSION = "0.1.4"
+PACKAGE = "PyUltron"
+NAME = "PyUltron"
+VERSION = "0.1.5"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
