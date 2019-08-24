@@ -6,7 +6,7 @@ import os
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
@@ -40,6 +40,6 @@ setup(
         'gevent==1.4.0',
         'Twisted==18.9.0',
         'protobuf==3.7.0',
-        'flower==0.9.3'
+        'vine==1.3.0'
     ]
 )
