@@ -14,6 +14,7 @@ class ConfigSingletion(object):
         self.queue_host = ''
         self.queue_port = 0
         self.queue_pwd = ''
+        self.queue_user = ''
         self.queue_db = 0
         self.queue_type = ''
         self._init_setting()
@@ -26,17 +27,19 @@ class ConfigSingletion(object):
                 self._init_queue(setting, values)
     
     def _init_queue(self, key, kwargs):
-        self.queue_type = key
-        self.queue_host = kwargs['host']
-        self.queue_port = kwargs['port']
-        self.queue_pwd = kwargs['pwd']
-        self.queue_db = kwargs['db'] if 'db' in kwargs else 0
+        self.set_queue(kwargs)
             
-    def set_queue(self, **kwargs):
-        self._queue_type = kwargs['qtype']
-        if self._queue_type == 'redis':
+    def set_queue(self, kwargs):
+        self.queue_type = kwargs['type']
+        if self.queue_type == 'redis':
             self.queue_host = kwargs['host']
             self.queue_port = kwargs['port']
+            self.queue_pwd = kwargs['pwd']
+            self.queue_db = kwargs['db'] if 'db' in kwargs else 0
+        elif self.queue_type == 'amqp':
+            self.queue_host = kwargs['host']
+            self.queue_port = kwargs['port']
+            self.queue_user = kwargs['user']
             self.queue_pwd = kwargs['pwd']
             self.queue_db = kwargs['db'] if 'db' in kwargs else 0
             
@@ -48,6 +51,7 @@ class ConfigSingletion(object):
         kwargs['type'] = self.queue_type
         kwargs['host'] = self.queue_host
         kwargs['port'] = self.queue_port
+        kwargs['user'] = self.queue_user
         kwargs['pwd'] = self.queue_pwd
         kwargs['db'] = self.queue_db
         return kwargs

@@ -8,21 +8,25 @@ from ultron.config import config_setting
 @six.add_metaclass(Singleton)
 class AppEngine(object):
     def __init__(self, **kwargs):
-        if ('host'  in kwargs) and ('port'  in kwargs) and ('pwd'  in kwargs):
+        if ('host' in kwargs) and ('port' in kwargs) and ('pwd' in kwargs):
             self._host = kwargs['host']
             self._port = kwargs['port']
-            self._port = kwargs['pwd']
+            if 'user' in kwargs:
+                self._user = kwargs['user']
+            self._pwd = kwargs['pwd']
             self._db = kwargs['db']
         else:
             self._host = config_setting.queue_host
             self._port = config_setting.queue_port
+            self._user = config_setting.queue_user
             self._pwd = config_setting.queue_pwd
             self._db = config_setting.queue_db
             
     def create_engine(self, task_name, module_list = []):
-        redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
-        app = Celery(task_name, broker=redis_url,
-                    backend=redis_url)
+        #redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
+        amqp_url = 'amqp://' + self._user + ':' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
+        app = Celery(task_name, broker=amqp_url,
+                    backend=amqp_url)
         class Config:
             CELERY_TIMEZONE = 'Asia/Shanghai'
             if len(module_list) > 0:

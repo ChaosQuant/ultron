@@ -55,7 +55,7 @@ class GeneticFactors(object):
             prob = np.random.uniform(0, 1)
             if prob < self._change_prob:
                 ## 随机挑一个基因点
-                change_point = np.random.randint(0, len(fa_code))
+                change_point = np.random.randint(0, len(new1))
                 ## 改变该点的值
                 new1[change_point] = not new1[change_point]
             new_dict[flag] = new1
