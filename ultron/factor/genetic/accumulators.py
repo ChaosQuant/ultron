@@ -12,6 +12,8 @@ from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityCeilValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityFloorValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityRoundValueHolder
+from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecuritySigmoidValueHolder
+from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityTanhValueHolder
 from ultron.sentry.Analysis.CrossSectionValueHolders import CSRankedSecurityValueHolder
 from ultron.sentry.Analysis.CrossSectionValueHolders import CSZScoreSecurityValueHolder
 from ultron.sentry.Analysis.CrossSectionValueHolders import CSPercentileSecurityValueHolder
@@ -28,7 +30,8 @@ class Accumulators(object):
                 9:SecurityCeilValueHolder,10:SecurityFloorValueHolder,
                 11:SecurityRoundValueHolder,12:SecurityRoundValueHolder,
                 13:CSRankedSecurityValueHolder,
-                14:CSZScoreSecurityValueHolder,15:CSPercentileSecurityValueHolder
+                14:CSZScoreSecurityValueHolder,15:CSPercentileSecurityValueHolder,
+                16:SecuritySigmoidValueHolder,17:SecurityTanhValueHolder
         }
         
     def transform(self, expression, is_formula=False):
