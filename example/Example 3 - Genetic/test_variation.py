@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
+import sys
+sys.path.append('../..')
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
+from ultron.factor.combine.combine_engine import CombineEngine
+from ultron.factor.genetic.mutation_factors import GeneticMutationFactors
 import pickle,itertools,sys,pdb
 import warnings
 warnings.filterwarnings("ignore")
-#sys.path.append('../..')
-from ultron.factor.combine.combine_engine import CombineEngine
-from ultron.factor.genetic.mutation_factors import GeneticMutationFactors
-
 
 def equal_combine(factor_df, factor_list):
     factor_df = factor_df.copy()
@@ -25,8 +25,10 @@ def equal_combine(factor_df, factor_list):
             f[k] = g[k].values
         alpha_res.append(f)
     total_data = pd.concat(alpha_res)
+    total_data = factor_df
     total_data['conmbine'] = total_data[factor_list].mean(axis=1).values
     score = np.corrcoef(total_data['conmbine'].fillna(0).values, total_data['ret'].fillna(0).values)[0,1]
+    print(score)
     return abs(score)
     #return np.random.uniform(0, 1, 1)[0]
 
@@ -43,8 +45,9 @@ point = int(np.random.uniform(0, len(factor_columns))/2)
 ori_field = factor_columns[:point]
 add_field = factor_columns[point:]
 
-best_code, best_field = mutation_factors.genetic_run(total_data, diff_filed = diff_filed, strong_field = ori_field, 
-                             weak_field = add_field)
+#best_code, best_field
+field_group = mutation_factors.genetic_run(total_data, diff_filed = diff_filed, strong_field = ori_field, 
+                             weak_field = add_field,is_best=False)
 print(best_code)
 print('----')
 print(best_field)

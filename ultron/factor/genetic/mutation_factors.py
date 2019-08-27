@@ -44,7 +44,7 @@ class GeneticMutationFactors(object):
             mo_code0, mo_code1 = mo_code[:cut_point], mo_code[cut_point:]
             new1 = np.hstack([fa_code0, mo_code1])
             prob = np.random.uniform(0, 1)
-            if prob < self._change_prob:
+            if prob < self._change_prob: 
                 change_point = np.random.randint(0, len(new1))
                 ## 改变该点的值
                 new1[change_point] = not new1[change_point] 
@@ -58,7 +58,7 @@ class GeneticMutationFactors(object):
         index = 0
         res = {}
         cols = []
-        for i in sub_group:
+        for i in sub_group: # fix me 种群的内部变异使用并行计算
             if i > 0:
                 factor_name = evalue_cols[index]
                 if i > 1:
@@ -80,13 +80,14 @@ class GeneticMutationFactors(object):
         tres = {} # # 新种群有变异后的特征也有父类特征
         score_dict = {}
         cols_dict = {}
-        for g, code in sub_group.items():
+        for g, code in sub_group.items(): # fix me 种群之间可以并行计算
             cols, res = self.calc_evalue_group(sub_group[g], evalue_cols, total_data)
             #合并其他特征
             sub_data = pd.DataFrame(res)
             for diff in diff_filed:
                 sub_data[diff] = total_data[diff]
-            score = self._objective(sub_data, cols)
+            score = self._objective(sub_data.replace([np.inf, -np.inf], np.nan), cols)
+            if score == np.nan: score = 0
             score_dict[g] = score
             cols_dict[g] = cols
             tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
@@ -118,7 +119,7 @@ class GeneticMutationFactors(object):
         return sub_data, liv_group,  score_se,  dict(fact_se), np.array(sub_data.columns), cols_dict
         
     def genetic_run(self, total_data, diff_filed, factors_filed = None, 
-                    strong_field = None, weak_field = None):
+                    strong_field = None, weak_field = None, is_best=True):
         if factors_filed is not None:
             point = int(np.random.uniform(0, len(factors_filed))/2)
             ori_field = factors_filed[:point]
@@ -148,9 +149,16 @@ class GeneticMutationFactors(object):
             if diff_fact_score < self._conver_prob and diff_score < self._conver_prob:
                 break
             last_score = best_fact_score.values[0]
-            
-        best_code = pd.Series(fact_se).sort_values(ascending=False)[0:1].index[0]
-        best_list = liv_group[best_code]
-        best_field = cols[[True if i> 0 else False for i in best_list]]
-        return best_code, best_field
+        
+        if is_best:
+            best_code = pd.Series(fact_se).sort_values(ascending=False)[0:1].index[0]
+            best_list = liv_group[best_code]
+            best_field = cols[[True if i> 0 else False for i in best_list]]
+            return best_code, best_field
+        else:
+            field_group = {}
+            for k, g in liv_group.items():
+                field_group[k] = cols[[True if i> 0 else False for i in g]]
+            return field_group
+                
         
