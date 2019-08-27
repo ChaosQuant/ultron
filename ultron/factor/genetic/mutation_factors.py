@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
+import gevent.monkey
 import itertools,time,pdb
 from . accumulators import accumulators_pool
 
@@ -54,7 +55,8 @@ class GeneticMutationFactors(object):
         return new_dict
     
     #种群特征计算
-    def calc_evalue_group(self, sub_group, evalue_cols, total_data):
+    def gevent_evalue_group(self, params):
+        sub_group, evalue_cols, total_data, diff_filed,g = params
         index = 0
         res = {}
         cols = []
@@ -73,25 +75,30 @@ class GeneticMutationFactors(object):
                 res[factor_name + 'c_' + str(i)] = factor_data.fillna(0).values
                 cols.append(factor_name + 'c_' + str(i))
             index += 1
-        return cols, res
+        sub_data = pd.DataFrame(res)
+        for diff in diff_filed:
+            sub_data[diff] = total_data[diff]
+        score = self._objective(sub_data.replace([np.inf, -np.inf], np.nan), cols)
+        if score == np.nan: score = 0
+        return score, cols, res, g
     
-    ## 种群个体能力评价
+        ## 种群个体能力评价
     def ga_evalue_group(self, sub_group, total_data, evalue_cols, diff_filed):
         tres = {} # # 新种群有变异后的特征也有父类特征
         score_dict = {}
         cols_dict = {}
-        for g, code in sub_group.items(): # fix me 种群之间可以并行计算
-            cols, res = self.calc_evalue_group(sub_group[g], evalue_cols, total_data)
-            #合并其他特征
-            sub_data = pd.DataFrame(res)
-            for diff in diff_filed:
-                sub_data[diff] = total_data[diff]
-            score = self._objective(sub_data.replace([np.inf, -np.inf], np.nan), cols)
-            if score == np.nan: score = 0
+        jobs = []
+        for g, code in sub_group.items():
+            jobs.append(gevent.spawn(self.gevent_evalue_group,
+                                    [sub_group[g], evalue_cols, total_data, 
+                                     diff_filed,g]))
+        gevent.joinall(jobs)
+        for result in jobs:
+            score, cols, res, g = result.value
             score_dict[g] = score
             cols_dict[g] = cols
             tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
-        return pd.DataFrame(tres), score_dict, cols_dict
+        return pd.DataFrame(tres), score_dict, cols_dict 
     
     #种群变异
     def ga_kill_group(self, total_data, ori_group, dict_score, evalue_cols, diff_filed, generation = 0):

@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import sys
-sys.path.append('../..')
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
@@ -11,6 +10,7 @@ import pickle,itertools,sys,pdb
 import warnings
 warnings.filterwarnings("ignore")
 
+# 以等权合成因子的IC值作为分数判断 (注意:系统是以分数倒序排序来进行种群筛选，若类似IC带有方向性需转化为绝对值)
 def equal_combine(factor_df, factor_list):
     factor_df = factor_df.copy()
     ndiff_field = [i for i in list(set(factor_df.columns)) if i not in factor_list]
@@ -28,9 +28,7 @@ def equal_combine(factor_df, factor_list):
     total_data = factor_df
     total_data['conmbine'] = total_data[factor_list].mean(axis=1).values
     score = np.corrcoef(total_data['conmbine'].fillna(0).values, total_data['ret'].fillna(0).values)[0,1]
-    print(score)
     return abs(score)
-    #return np.random.uniform(0, 1, 1)[0]
 
 
 mutation_factors = GeneticMutationFactors(0.6, 0.2, 0.9, 0.0000001, generation=6, group_num=5, objective=equal_combine)
