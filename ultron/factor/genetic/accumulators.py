@@ -37,11 +37,14 @@ class Accumulators(object):
     def transform(self, expression, is_formula=False):
         var_group  = expression.split('c_')
         formula = ''
+        is_acc = False
         for i in range(len(var_group)):
             if i == 0:
                 formula = '\'' + var_group[i] + '\''
-            else:
+            elif int(var_group[i]) > 1:
+                is_acc = True
                 formula = self._accumulators_pool[int(var_group[i])].__name__ + '(' + formula + ')'
+        if not is_acc : formula = self._accumulators_pool[1].__name__ + '(' + formula + ')'
         return eval(formula) if is_formula else formula
     
     def fetch_accumulators_pool(self):
