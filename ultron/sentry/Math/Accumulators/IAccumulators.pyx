@@ -687,3 +687,20 @@ cdef class Round(BasicFunction):
 
     def __str__(self):
         return "\\mathrm{{Round}}({0})".format(str(self._inner))
+    
+cdef class Sigmoid(BasicFunction):
+    def __init__(self, x, orig_value=NAN):
+        super(Sigmoid, self).__init__(x, orig_value)
+    
+    cpdef double result(self):
+        return 1 / (1 + exp(self._origValue))
+    
+    def __str__(self):
+        return "\\mathrm{{Sigmoid}}({0})".format(str(self._inner))
+    
+cdef class Tanh(BasicFunction):
+    def __init__(self, x, orig_value=NAN):
+        super(Tanh, self).__init__(x, orig_value)
+    
+    cpdef double result(self):
+        return (exp(self._origValue) - exp(-self._origValue)) / (exp(self._origValue) + exp(-self._origValue))
