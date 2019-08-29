@@ -21,6 +21,8 @@ from ultron.sentry.Math.Accumulators.IAccumulators cimport NormInv
 from ultron.sentry.Math.Accumulators.IAccumulators cimport Ceil
 from ultron.sentry.Math.Accumulators.IAccumulators cimport Floor
 from ultron.sentry.Math.Accumulators.IAccumulators cimport Round
+from ultron.sentry.Math.Accumulators.IAccumulators cimport Sigmoid
+from ultron.sentry.Math.Accumulators.IAccumulators cimport Tanh
 from ultron.sentry.Math.Accumulators.StatelessAccumulators cimport Diff
 from ultron.sentry.Math.Accumulators.StatelessAccumulators cimport SimpleReturn
 from ultron.sentry.Math.Accumulators.StatelessAccumulators cimport LogReturn
@@ -135,6 +137,16 @@ cdef class SecurityRoundValueHolder(SecurityStatelessSingleValueHolder):
                                                        x=x)
 
 
+cdef class SecuritySigmoidValueHolder(SecurityStatelessSingleValueHolder):
+    def __init__(self, x):
+        super(SecuritySigmoidValueHolder, self).__init__(holderType=Sigmoid,
+                                                       x=x)
+    
+cdef class SecurityTanhValueHolder(SecurityStatelessSingleValueHolder):
+    def __init__(self, x):
+        super(SecurityTanhValueHolder, self).__init__(holderType=Tanh,
+                                                       x=x)
+        
 cdef class SecurityDiffValueHolder(SecurityStatelessSingleValueHolder):
     def __init__(self, x):
         super(SecurityDiffValueHolder, self).__init__(holderType=Diff,
