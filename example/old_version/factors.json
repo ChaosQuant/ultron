@@ -1,5 +1,5 @@
 [{
-		"conn": "mysql+mysqlconnector://quant:uZVbhHKy9T@180.166.26.82:59000/quant",
+		"conn": "mysql+mysqlconnector://quant:uZVbhHKy9T@127.0.0.1:59000/quant",
 		"factors": [{
 			"model": "model",
 			"table": "Min5DailyHighFrequency",
