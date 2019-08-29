@@ -1,0 +1,6 @@
+package ultron.cache_data;
+message CacheData {
+    required bytes  session = 1; //会话ID
+    required bytes  key = 2; // 关键key
+    required bytes  data_stream = 3; // 数据流
+}
