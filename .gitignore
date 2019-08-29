@@ -1,3 +1,19 @@
+##ignore this file##
 /build/
+build
 /dist/
-*/__pycache__/
+dist
+/__pycache__/
+__pycache__
+/.ipynb_checkpoints/
+.ipynb_checkpoints
+*.py[cod]
+*.so
+*.egg
+*.egg-info
+*.pyc
+*.c
+*.html
+*.pkl
+*.pid
+*.pyc
