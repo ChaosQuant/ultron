@@ -2,6 +2,7 @@
 
 from ... utilities.singleton import Singleton
 from ultron.sentry.Analysis.SecurityValueHolders import SecurityLatestValueHolder
+from ultron.sentry.Analysis.SecurityValueHolders import SecurityCurrentValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityDiffValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecuritySignValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityExpValueHolder
@@ -23,7 +24,7 @@ import six
 class Accumulators(object):
     def __init__(self):
         self._accumulators_pool = {
-                1:SecurityLatestValueHolder,2:SecurityDiffValueHolder,
+                1:SecurityCurrentValueHolder,2:SecurityDiffValueHolder,
                 3:SecuritySignValueHolder,4:SecurityExpValueHolder,
                 5:SecurityLogValueHolder,6:SecuritySqrtValueHolder,
                 7:SecurityAbsValueHolder,8:SecurityNormInvValueHolder,
