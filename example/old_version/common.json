@@ -1,12 +1,12 @@
 {
 	"risk": {
-		"conn": "mysql+mysqlconnector://quant:AUsYCJ4cMa@miglab.jios.org:3306/quant",
+		"conn": "mysql+mysqlconnector://quant:AUsYCJ4cMa@127.0.0.1:3306/quant",
 		"model": "model",
 		"table": "RiskExposure",
 		"trade_date": "trade_date"
 	},
 	"market": {
-		"conn": "mysql+mysqlconnector://quant:AUsYCJ4cMa@miglab.jios.org:3306/quant",
+		"conn": "mysql+mysqlconnector://quant:AUsYCJ4cMa@127.0.0.1:3306/quant",
 		"model": "model",
 		"table": "Market",
 		"trade_date": "trade_date",

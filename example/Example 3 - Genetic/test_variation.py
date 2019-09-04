@@ -28,6 +28,7 @@ def equal_combine(factor_df, factor_list):
     total_data = factor_df
     total_data['conmbine'] = total_data[factor_list].mean(axis=1).values
     score = np.corrcoef(total_data['conmbine'].fillna(0).values, total_data['ret'].fillna(0).values)[0,1]
+    #score = abs(total_data['conmbine'].mean()) / 100
     return abs(score)
 
 
@@ -36,6 +37,8 @@ mutation_factors = GeneticMutationFactors(0.2, 0.2, 0.9, 0.0000001, generation=2
 with open('factor_data.pkl','rb') as file2:
     total_data = pickle.load(file2)
     
+total_data = total_data.sort_values(by=['trade_date','code'],ascending=True)
+
 diff_filed = ['trade_date','code','ret']
 factor_columns = [i for i in list(set(total_data.columns)) if i not in ['trade_date','code','ret']]
 

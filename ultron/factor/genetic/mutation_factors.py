@@ -48,7 +48,7 @@ class GeneticMutationFactors(object):
             prob = np.random.uniform(0, 1)
             if prob < self._change_prob:
                 # 10%的变异
-                count = int(len(new1) * 0.1) + 1
+                count = int(len(new1) * 0.01) + 1
                 pos = np.random.randint(0, len(new1), count)
                 #change_point = np.random.randint(0, len(new1))
                 ## 改变该点的值
@@ -152,8 +152,9 @@ class GeneticMutationFactors(object):
         sub_data = pd.concat([sub_data,total_data[diff_filed]], axis=1)
         return sub_data, liv_group,  score_se,  dict(fact_se), np.array(factor_columns), cols_dict
         
-    def genetic_run(self, total_data, diff_filed, factors_filed = None, 
-                    strong_field = None, weak_field = None, is_best=True):
+    def genetic_run(self, total_data, diff_filed, sequence=['trade_date','code'],
+                    factors_filed = None, strong_field = None, 
+                    weak_field = None, is_best=True):
         if factors_filed is not None:
             point = int(np.random.uniform(0, len(factors_filed))/2)
             ori_field = factors_filed[:point]
@@ -161,6 +162,8 @@ class GeneticMutationFactors(object):
         elif strong_field is not None and weak_field is not None:
             ori_field = strong_field
             add_field = weak_field
+        
+        total_data = total_data.sort_values(by=sequence,ascending=True)
         evalue_cols = np.array(ori_field + add_field)
         last_score = 0.0
         #初始种群
@@ -188,7 +191,6 @@ class GeneticMutationFactors(object):
                best_fact_score.values[0], 
                i, last_score, 
                diff_fact_score,i+1,diff_score)) 
-            
             if diff_fact_score < self._conver_prob and diff_score < self._conver_prob:
                 break
             last_score = best_fact_score.values[0]
@@ -203,5 +205,3 @@ class GeneticMutationFactors(object):
             for k, g in liv_group.items():
                 field_group[k] = cols[[True if i> 0 else False for i in g]]
             return field_group
-                
-        

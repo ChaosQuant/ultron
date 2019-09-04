@@ -1,7 +1,7 @@
 from celery import Celery
 from celery.result import AsyncResult
 from celery.schedules import crontab
-import six
+import six,pdb
 from ultron.utilities.singleton import Singleton
 from ultron.config import config_setting
 
@@ -23,7 +23,7 @@ class AppEngine(object):
             self._db = config_setting.queue_db
             
     def create_engine(self, task_name, module_list = []):
-        #redis_url = 'redis://:' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
+        #redis_url = 'redis://:12345678dx@127.0.0.1:6379/0'
         amqp_url = 'amqp://' + self._user + ':' + self._pwd + '@' + self._host + ':' + str(self._port) + '/' + str(self._db)
         app = Celery(task_name, broker=amqp_url,
                     backend=amqp_url)
