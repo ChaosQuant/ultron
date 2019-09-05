@@ -43,24 +43,14 @@ class Weighted(object):
     #中性化
     def neutralize(self, total_data, risk_df):
         se = total_data.dropna()
-        risk = risk_df.loc[se.index]
+        # se = total_data.copy()
+        risk = risk_df.loc[se.index,:]
         # use numpy for neu, which is faster
         x = np.linalg.lstsq(risk.values, np.matrix(se).T)[0]
         se_neu = se - risk.dot(x)[0]
     
         return se_neu
-    
-    def returns(self, total_data, forward_returns, init_capital=100000):
-        weights = total_data.groupby(level=['trade_date']).apply(self._to_weights)
-        weighted_returns = forward_returns.multiply(weights, axis=0)
-        
-        factor_ret = weighted_returns.groupby(level='trade_date').sum()
-        pnl = init_capital*2*factor_ret
-        turnover = weights.unstack().diff().abs().sum(axis=1)
-        long_count = total_data.groupby(level=['trade_date']).apply(self._to_ls_count)
-        short_count = total_data.groupby(level=['trade_date']).apply(lambda x: self._to_ls_count(x, long=False))
-        return factor_ret, pnl, turnover, long_count, short_count
-    
+
     def _to_weights(self, group):
         demeaned_vals = group - group.mean()
         return demeaned_vals / demeaned_vals.abs().sum()
@@ -74,37 +64,59 @@ class Weighted(object):
             count = len(demeaned_vals[demeaned_vals<0])
         return count
     
+    def returns(self, total_data, forward_returns, init_capital=100000):
+        weights = total_data.groupby(level=['trade_date']).apply(self._to_weights)
+        weighted_returns = forward_returns.multiply(weights, axis=0)
+        
+        factor_ret = weighted_returns.groupby(level='trade_date').sum()
+        pnl = init_capital*2*factor_ret
+        turnover = weights.unstack().diff().abs().sum(axis=1)
+        long_count = total_data.groupby(level=['trade_date']).apply(self._to_ls_count)
+        short_count = total_data.groupby(level=['trade_date']).apply(lambda x: self._to_ls_count(x, long=False))
+        return factor_ret, pnl, turnover, long_count, short_count
+    
     def run(self, factor_data, risk_data, forward_returns,
-            factor_name, method='quantile', up_limit=0.025, down_limit=0.025,
+            factor_name, horizon=1, method='quantile', up_limit=0.025, down_limit=0.025,
             init_capital=100000):
+        """
+        参数：
+            horizon: 调仓期，按照交易日计算。
+        """
         factor_se = factor_data.set_index(['code','trade_date'])
         risk_se = risk_data.set_index(['code','trade_date'])
         forward_returns = forward_returns.set_index(['code','trade_date'])
-        risk_df = risk_se.reindex(factor_se.index)[self._industry_styles + ['SIZE'] + ['COUNTRY']]
+        # risk_df = risk_se.reindex(factor_se.index)[self._industry_styles + ['SIZE'] + ['COUNTRY']]
+        risk_df = risk_se.reindex(factor_se.index)[self._industry_styles + ['SIZE']]
         risk_df.dropna(inplace=True)
         factor_se = factor_se.loc[risk_df.index][factor_name]
         returns = forward_returns.loc[risk_df.index]
         
-        
-        factor_se = factor_se.groupby('trade_date').apply(lambda x: self.winsorize(x, method=method,
+        factor_se = factor_se.groupby(level='trade_date').apply(lambda x: self.winsorize(x, method=method,
                                                                     limits=(up_limit, down_limit)))
-        factor_se = self.neutralize(factor_se, risk_df)
-        factor_se = factor_se.groupby('trade_date').apply(lambda x: self.standardize(x))
+        # factor_se = factor_se.groupby(level='trade_date').apply(lambda x: self.neutralize(x, risk_df)) # index 多了一项
+        grouped = factor_se.groupby(level='trade_date')
+        res = []
+        for trade_date, g in grouped:
+            neu = self.neutralize(g, risk_df)
+            res.append(neu)
+        factor_se = pd.concat(res, axis=0)
+
+        factor_se = factor_se.groupby(level='trade_date').apply(lambda x: self.standardize(x))
         
-        factor_ret, pnl, turnover_se, lc, sc = self.returns(factor_se, forward_returns)
+        factor_ret, pnl, turnover_se, lc, sc = self.returns(factor_se, forward_returns['ret'], init_capital=init_capital)
         
         #计算指标
         ir = factor_ret.mean()/factor_ret.std()
-        sharpe = np.sqrt(252)*ir
+        sharpe = np.sqrt(252/horizon)*ir
         turnover = turnover_se.mean()
-        returns = factor_ret.sum()*252/len(factor_ret)
+        returns = factor_ret.sum()*252/horizon/len(factor_ret)
         fitness = sharpe * np.sqrt(abs(returns)/turnover)
-        margin = factor_ret.sum()/turnover.sum()
+        margin = factor_ret.sum()/turnover_se.sum()
         
         capital = pnl + init_capital
         running_max = np.maximum.accumulate(capital)
         drawback_data = -((running_max - capital) / running_max)
         max_drawdown = np.min(drawback_data)
         
-        return {'ir':ir.ret, 'sharpe':sharpe.ret, 'turnover':turnover, 'returns':returns.ret, 
-                'fitness':fitness.ret, 'margin':margin.ret, 'max_drawdown':max_drawdown.ret}
+        return {'ir':ir, 'sharpe':sharpe, 'turnover':turnover, 'returns':returns, 
+                'fitness':fitness, 'margin':margin, 'max_drawdown':max_drawdown}
