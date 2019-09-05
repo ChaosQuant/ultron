@@ -211,3 +211,11 @@ cdef class Floor(BasicFunction):
 cdef class Round(BasicFunction):
 
     cpdef double result(self)
+    
+cdef class Sigmoid(BasicFunction):
+
+    cpdef double result(self)
+    
+cdef class Tanh(BasicFunction):
+
+    cpdef double result(self)

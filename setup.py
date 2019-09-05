@@ -22,7 +22,7 @@ else:
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
@@ -125,7 +125,8 @@ setup(
         'pandas>=0.18.0',
         'scipy>=0.18.0',
         'simpleutils>=0.1.0',
-        'six>=1.10.0'
+        'six>=1.10.0',
+        'seaborn>=0.9.0',
         'mysql-connector-python==8.0.15',
         'protobuf==3.7.0',
         'pymssql==2.1.4',
@@ -139,7 +140,9 @@ setup(
         'gevent==1.4.0',
         'Twisted==18.9.0',
         'protobuf==3.7.0',
-        'vine==1.3.0'
+        'vine==1.3.0',
+        'cvxopt>=1.2.3',
+        'statsmodels>=0.10.1'
     ],
     classifiers=[],
     cmdclass={"version_build": version_build},

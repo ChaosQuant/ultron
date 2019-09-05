@@ -1,0 +1,43 @@
+[{
+		"conn": "mysql+mysqlconnector://quant:uZVbhHKy9T@127.0.0.1:59000/quant",
+		"factors": [{
+			"model": "model",
+			"table": "Min5DailyHighFrequency",
+			"trade_date": "trade_date",
+			"code": "code",
+			"columns": [
+				"flow_in_ratio1_20",
+				"improved_reversal_20",
+				"trend_strength_20",
+				"volume_price_corr_20",
+				"volume_ratio_1000",
+				"volume_ratio_1030",
+				"volume_ratio_1100",
+				"volume_ratio_1130",
+				"volume_ratio_1330",
+				"volume_ratio_1400",
+				"volume_ratio_1430",
+				"volume_ratio_1500"
+			]
+		}]
+	},
+	{
+		"conn": "mysql+mysqlconnector://quant:AUsYCJ4cMa@127.0.0.1:3306/quant",
+		"factors": [{
+			"model": "model",
+			"table": "Experimental",
+			"trade_date": "trade_date",
+			"code": "code",
+			"columns": [
+				"ROEAfterNonRecurring",
+				"CHV",
+				"IVR",
+				"EPAfterNonRecurring",
+				"DROEAfterNonRecurring",
+				"CFinc1",
+				"DRevenue",
+				"Revenue"
+			]
+		}]
+	}
+]

@@ -1,0 +1,29 @@
+{
+    "index": {
+        "conn": "",
+        "model": "model",
+        "table": "IndexComponents",
+        "trade_date": "trade_date",
+        "code": "code",
+        "flag":"indexCode",
+        "columns": [
+            "indexShortName",
+            "indexCode",
+            "code",
+            "exchangeCD",
+            "weight"
+        ]
+    },
+    "industry": {
+        "conn": "",
+        "model": "model",
+        "table": "IndustryComponents",
+        "trade_date": "trade_date",
+        "code": "code",
+        "flag":"industrySymbol",
+        "columns": [
+            "industryID1",
+            "industryName1"
+        ]
+    }
+}
