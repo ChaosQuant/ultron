@@ -13,7 +13,9 @@ industry_styles = ['Bank','RealEstate','Health','Transportation','Mining',
                                  'Computer','LightIndus','Utilities','Telecom','AgriForest','CHEM',
                                  'Media','IronSteel','NonBankFinan','ELECEQP','AERODEF','Conglomerates']
 
-risk_data = total_data[['code','trade_date'] + industry_styles + ['SIZE','COUNTRY']]
+# risk_data = total_data[['code','trade_date'] + industry_styles + ['SIZE','COUNTRY']]
+
+risk_data = total_data[['code','trade_date'] + industry_styles + ['SIZE']]
 
 forward_returns  = total_data[['code','trade_date', 'ret']]
 
