@@ -70,7 +70,7 @@ class Weighted(object):
         
         factor_ret = weighted_returns.groupby(level='trade_date').sum()
         pnl = init_capital*2*factor_ret
-        turnover = weights.unstack().diff().abs().sum(axis=1)
+        turnover = weights.unstack().T.diff().abs().sum(axis=1)
         long_count = total_data.groupby(level=['trade_date']).apply(self._to_ls_count)
         short_count = total_data.groupby(level=['trade_date']).apply(lambda x: self._to_ls_count(x, long=False))
         return factor_ret, pnl, turnover, long_count, short_count
