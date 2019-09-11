@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import gevent.monkey
+import multiprocessing
 import itertools,time,pdb
 from . accumulators import accumulators_pool
 GLOBAL_ORDER_ID = 0
@@ -108,6 +109,26 @@ class GeneticMutationFactors(object):
         score_dict = {}
         cols_dict = {}
         jobs = []
+        #multiprocessing
+        cpus_count = multiprocessing.cpu_count() if multiprocessing.cpu_count() < len(sub_group) else len(sub_group)
+        for g, code in sub_group.items():
+            jobs.append([sub_group[g], evalue_cols, total_data, 
+                                     diff_filed,g])
+        with multiprocessing.Pool(processes=cpus_count) as p:
+            values_list = p.map(self.gevent_evalue_group, jobs)
+        
+        for values in values_list:
+            score =  values[0]
+            cols = values[1]
+            res = values[2]
+            g = values[3]
+            score_dict[g] = score
+            cols_dict[g] = cols
+            tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
+        return pd.DataFrame(tres), score_dict, cols_dict 
+            
+        '''
+        #gevent
         for g, code in sub_group.items():
             jobs.append(gevent.spawn(self.gevent_evalue_group,
                                     [sub_group[g], evalue_cols, total_data, 
@@ -123,6 +144,7 @@ class GeneticMutationFactors(object):
             cols_dict[g] = cols
             tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
         return pd.DataFrame(tres), score_dict, cols_dict 
+        '''
     
     #种群变异
     def ga_kill_group(self, total_data, ori_group, dict_score, evalue_cols, diff_filed, generation = 0):
