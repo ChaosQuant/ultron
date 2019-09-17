@@ -64,7 +64,8 @@ class GeneticMutationFactors(object):
     # 基因突变计算
     def gevent_calc_factor(self, params):
         factor_data, factor_name, i = params
-        if i > 1:
+        if i > 0:
+            pdb.set_trace()
             accumulator = accumulators_pool[i](str(factor_name))
             sub_data = accumulator.transform(factor_data.set_index('trade_date'), 
                                                 category_field='code', dropna=False)
@@ -73,6 +74,24 @@ class GeneticMutationFactors(object):
             sub_data = factor_data[factor_name].copy()
         return sub_data.fillna(0), factor_name, i
         
+    def apply_calc_factor(self, data):
+        data = data.copy()
+        factor_name = data.name
+        calc_acc = int(data['eval'])
+        #calc_acc = int(np.random.uniform(2, len(accumulators_pool) + 1, 1))
+        data.drop(['eval'],inplace=True)
+        data = data.reset_index()
+        if calc_acc > 0:
+            accumulator = accumulators_pool[calc_acc]
+            name = factor_name + 'c_' + str(calc_acc)
+            sub_data = accumulator(factor_name).transform(data.fillna(0).set_index('trade_date'), name=name,
+                                                          category_field='code',dropna=False)
+            sub_data = sub_data.reset_index().set_index(['trade_date','code'])
+            #sub_data = sub_data['transformed']
+        else:
+            sub_data = data.set_index(['trade_date','code'])
+            #sub_data = sub_data[factor_name].copy()
+        return sub_data
     #种群特征计算
     def gevent_evalue_group(self, params):
         sub_group, evalue_cols, total_data, diff_filed, g =  params
@@ -80,7 +99,14 @@ class GeneticMutationFactors(object):
         res = {}
         cols = []
         jobs = []
-        #此处引入gevent 
+        #并行计算
+        sub_factor_data = total_data.set_index(
+                            ['trade_date','code'])[evalue_cols[[True if i> 0 else False for i in sub_group]]].T
+        evalue_acc = [i for i in sub_group if i > 0]
+        sub_factor_data['eval'] = evalue_acc
+        result = sub_factor_data.apply(self.apply_calc_factor, axis=1)
+        sub_data = pd.concat(list(result.values),axis=1).reset_index()
+        '''
         for i in sub_group:
             if i > 0:
                 factor_name = evalue_cols[index]
@@ -95,13 +121,20 @@ class GeneticMutationFactors(object):
             if sub_factor_name not in res.keys():
                 res[sub_factor_name] = factor_data.fillna(0).values
                 cols.append(sub_factor_name)
-        
+        pdb.set_trace()
         sub_data = pd.DataFrame(res)
+        '''
+        cols = [i for i in sub_data.columns if i not in ['trade_date','code']]
+        diff_data = total_data[diff_filed]
+        sub_data = sub_data.merge(diff_data, on=['code','trade_date'])
+        '''
         for diff in diff_filed:
             sub_data[diff] = total_data[diff]
+        '''
+        #dataframe 转化为字典对应的数据
         score = self._objective(sub_data.replace([np.inf, -np.inf], np.nan), cols)
         if score == np.nan: score = 0
-        return score, cols, res, g
+        return score, cols, sub_data, g
     
     ## 种群个体能力评价
     def ga_evalue_group(self, sub_group, total_data, evalue_cols, diff_filed):
@@ -111,40 +144,37 @@ class GeneticMutationFactors(object):
         jobs = []
         #multiprocessing
         cpus_count = multiprocessing.cpu_count() if multiprocessing.cpu_count() < len(sub_group) else len(sub_group)
+        start_time = time.time()
         for g, code in sub_group.items():
             jobs.append([sub_group[g], evalue_cols, total_data, 
                                      diff_filed,g])
         with multiprocessing.Pool(processes=cpus_count) as p:
             values_list = p.map(self.gevent_evalue_group, jobs)
-        
+        #for job in jobs:
+        #    self.gevent_evalue_group(job)
+        cols_sets = []
+        factor_data = None
+        print(time.time() - start_time)
         for values in values_list:
             score =  values[0]
             cols = values[1]
-            res = values[2]
+            #res = values[2]
+            sub_data = values[2]
             g = values[3]
             score_dict[g] = score
             cols_dict[g] = cols
-            tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
-        return pd.DataFrame(tres), score_dict, cols_dict 
+            sub_data.sort_values(by=['trade_date','code'],ascending=True,inplace=True)
+            if factor_data is None:
+                cols_sets = cols
+                factor_data = sub_data[cols]
+            else:
+                diff_cols = list(set(cols) - set(cols_sets))
+                cols_sets += diff_cols
+                for diff in diff_cols:
+                    factor_data[diff] = sub_data[diff]
+            #tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
+        return factor_data, score_dict, cols_dict 
             
-        '''
-        #gevent
-        for g, code in sub_group.items():
-            jobs.append(gevent.spawn(self.gevent_evalue_group,
-                                    [sub_group[g], evalue_cols, total_data, 
-                                     diff_filed,g]))
-        gevent.joinall(jobs)
-        for result in jobs:
-            values= result.value    
-            score =  values[0]
-            cols = values[1]
-            res = values[2]
-            g = values[3]
-            score_dict[g] = score
-            cols_dict[g] = cols
-            tres = dict(tres, **res) #字典类型，已经解决多个种群会使用同一个基础的问题
-        return pd.DataFrame(tres), score_dict, cols_dict 
-        '''
     
     #种群变异
     def ga_kill_group(self, total_data, ori_group, dict_score, evalue_cols, diff_filed, generation = 0):
