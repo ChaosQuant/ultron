@@ -32,7 +32,7 @@ def equal_combine(factor_df, factor_list):
     return abs(score)
 
 
-mutation_factors = GeneticMutationFactors(0.2, 0.2, 0.9, 0.0000001, generation=20, group_num=6, objective=equal_combine)
+mutation_factors = GeneticMutationFactors(0.6, 0.4, 0.9, 0.0000001, generation=10, group_num=9, objective=equal_combine)
 
 with open('factor_data.pkl','rb') as file2:
     total_data = pickle.load(file2)

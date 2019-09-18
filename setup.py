@@ -22,7 +22,7 @@ else:
 
 PACKAGE = "ultron"
 NAME = "ultron"
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 DESCRIPTION = "Ultron " + VERSION
 AUTHOR = "kerry"
 AUTHOR_EMAIL = "flaght@gmail.com"
