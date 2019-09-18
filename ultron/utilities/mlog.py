@@ -1,45 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import threading
-import logging
-import datetime
-import sys
-import os
-
-class Singleton(object):
-    objs = {}
-    objs_locker = threading.Lock()
-
-    def __new__(cls, *args, **kv):
-        if cls in cls.objs:
-            return cls.objs[cls]['obj']
-
-        cls.objs_locker.acquire()
-        try:
-            if cls in cls.objs:
-                return cls.objs[cls]['obj']
-            obj = object.__new__(cls)
-            cls.objs[cls] = {'obj':obj, 'init':False}
-            setattr(cls, '__init__', cls.decorate_init(cls.__init__))
-            return cls.objs[cls]['obj']
-        finally:
-            cls.objs_locker.release()
-
-    @classmethod
-    def decorate_init(cls, fn):
-        def init_wrap(*args):
-            if not cls.objs[cls]['init']:
-                fn(*args)
-                cls.objs[cls]['init'] = True
-            return
-        return init_wrap
-
-class MLog(Singleton):
+import threading,logging,datetime,os, six
+from ultron.utilities.singleton import Singleton
+@six.add_metaclass(Singleton)
+class MLog(object):
     
     def __init__(self):
-        self.config(level=logging.DEBUG)
-        
+        self._logging = None #self._config(level=logging.DEBUG)
+    
     def config(self, name="logging", level=logging.DEBUG):
+        self._logging = self._config(name=name, level=level)
+
+    def _config(self, name="logging", level=logging.DEBUG):
         """
         Constructor
         """
@@ -60,8 +32,7 @@ class MLog(Singleton):
         console.setFormatter(formatter)
         # 将定义好的console日志handler添加到root logger
         logging.getLogger('').addHandler(console)
-
-
-    @classmethod
-    def write(self):
         return logging
+
+    def write(self):
+        return self._logging
