@@ -84,12 +84,13 @@ diff_filed = ['trade_date','code','ret'] + risk_styles
 total_data = total_data.sort_values(by=['trade_date','code'],ascending=True)
 
 # 定义遗传对象
-mutation_factors = GeneticMutationFactors(0.8, #添加第一类特征概率
-                                          0.2, #添加第二类特征概率
-                                          0.9, #突变概率
-                                          0.00001,#收敛值大小，即子代最好种群和父代最好种群分数差值，若小于改值则停止繁衍
-                                          generation=100, # 繁衍代数
-                                          group_num=20, # 每代种群数
+mutation_factors = GeneticMutationFactors(del_prob=0.85, #删除强特征概率
+                                          add_prob=0.05, #添加弱特征概率
+                                          change_prob=0.9, #突变概率
+                                          cover_prob = 0.02, # 种群变异覆盖率
+                                          conver_prob=0.00001,#收敛值大小，即子代最好种群和父代最好种群分数差值，若小于改值则停止繁衍
+                                          generation=6, # 繁衍代数
+                                          group_num=10, # 每代种群数
                                           objective=websim_weighted)
 
 #第一种返回最后一代最好前group_num种群

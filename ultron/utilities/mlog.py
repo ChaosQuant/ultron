@@ -19,7 +19,8 @@ class MLog(object):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
         filename = dir_name + name + '_' + datetime.datetime.now().strftime('%b_%d_%H_%M')+'.log'
-        format_str = "[%(process)d %(thread)d][%(asctime)s][%(filename)s line:%(lineno)d][%(levelname)s] %(message)s"
+        #format_str = "[%(process)d %(thread)d][%(asctime)s][%(filename)s line:%(lineno)d][%(levelname)s] %(message)s"
+        format_str = "[%(filename)s line:%(lineno)d][%(levelname)s] %(message)s"
         # define a Handler which writes INFO messages or higher to the sys.stderr
         logging.basicConfig(level=level,
                             format=format_str,
