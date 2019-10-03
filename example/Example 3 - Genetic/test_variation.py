@@ -33,7 +33,8 @@ def equal_combine(factor_df, factor_list):
     return abs(score)
 
 pdb.set_trace()
-mutation_factors = GeneticCrossFactors(0.4, 0.2, 0.9, 0.0000001, generation=40, group_num=10, objective=equal_combine)
+mutation_factors = GeneticCrossFactors(del_prob=0.4, add_prob=0.2, cross_prob=0.4, change_prob=0.9, 
+                                       conver_prob=0.0000001, generation=30, group_num=10, objective=equal_combine)
 
 with open('factor_data.pkl','rb') as file2:
     total_data = pickle.load(file2)
