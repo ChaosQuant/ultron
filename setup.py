@@ -142,7 +142,9 @@ setup(
         'protobuf==3.7.0',
         'vine==1.3.0',
         'cvxopt>=1.2.3',
-        'statsmodels>=0.10.1'
+        'statsmodels>=0.10.1',
+        'graphviz>=0.13',
+        'joblib>=0.14.0'
     ],
     classifiers=[],
     cmdclass={"version_build": version_build},
