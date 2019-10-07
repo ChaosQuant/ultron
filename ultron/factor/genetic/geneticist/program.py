@@ -2,21 +2,36 @@
 import numpy as np
 from copy import copy
 import pdb
-from . operators import operators_sets,crossover_sets,mutation_sets
+from . operators import crossover_sets,mutation_sets,operators_sets,calc_factor, Function
+
+import warnings
+warnings.filterwarnings("ignore")
 
 class Program(object):
     
     def __init__(self, init_depth, method,
                  random_state, factor_sets, 
-                 p_point,
+                 p_point_replace,
+                 function_set,
+                 operators_set,
+                 fitness,
+                 coverage_rate=0.5,
                  n_features=0,
-                 program=None):
+                 program=None,
+                 parents=None):
         self._init_depth = init_depth
         self._init_method = method
         self._program = program
         self._factor_sets = factor_sets
-        self._p_point_replace=p_point
+        self._p_point_replace = p_point_replace
+        self._function_set = function_set
+        self._operators_set = operators_set
         self._n_features = n_features
+        self._fitness = fitness
+        self._coverage_rate = coverage_rate
+        self._raw_fitness = None # fitness得分
+        self._is_valid = True
+        self._parents = parents
         if self._program is None:
             self._program = self.build_program(random_state)
     
@@ -35,9 +50,13 @@ class Program(object):
         return formula
     
     def transform(self):
+        if len(self._program) < 2:
+            result = 'SecurityCurrentValueHolder(\'' + self._program[0] + '\')'
+            print(result)
+            return result
         apply_stack = []
         for node in self._program:
-            if node in operators_sets:
+            if isinstance(node,Function):
                 apply_stack.append([node])
             else:
                 apply_stack[-1].append(node)
@@ -57,7 +76,7 @@ class Program(object):
         output = 'digraph program {\nnode [style=filled]\n'
         for i, node in enumerate(self._program):
             fill = '#cecece'
-            if node in operators_sets:
+            if isinstance(node,Function):
                 if i not in fade_nodes:
                     fill = '#2a5caa'
                 terminals.append([node.arity, i])
@@ -101,17 +120,17 @@ class Program(object):
             max_depth = self._init_depth
         else:
             max_depth = random_state.randint(*self._init_depth)
-        function = random_state.randint(len(operators_sets))
-        function = operators_sets[function]
+        function = random_state.randint(len(self._operators_set))
+        function = self._operators_set[function]
         program = [function]
         terminal_stack = [function.arity]
         while terminal_stack:
             depth = len(terminal_stack)
-            choice = self._n_features + len(operators_sets)
+            choice = self._n_features + len(self._operators_set)
             choice = np.random.randint(0,choice)
             if depth < max_depth and (method == 'full' or
-                                        choice <= len(operators_sets)):
-                function = operators_sets[np.random.randint(0,len(operators_sets)-1)] 
+                                        choice <= len(self._operators_set)):
+                function = self._operators_set[np.random.randint(0,len(self._operators_set)-1)] 
                 program.append(function)
                 terminal_stack.append(function.arity)
             else:
@@ -130,14 +149,14 @@ class Program(object):
             program = self._program
         # Choice of crossover points follows Koza's (1992) widely used approach
         # of choosing functions 90% of the time and leaves 10% of the time.
-        probs = np.array([0.9 if node in operators_sets else 0.1 for node in program])
+        probs = np.array([0.9 if node in self._operators_set else 0.1 for node in program])
         probs = np.cumsum(probs / probs.sum())
         start = np.searchsorted(probs, random_state.uniform())
         stack = 1
         end = start
         while stack > end - start:
             node = program[end]
-            if node in operators_sets:
+            if node in self._operators_set:
                 stack += node.arity
             end += 1
         return start, end
@@ -149,12 +168,14 @@ class Program(object):
     ##交叉
     def crossover(self, donor, random_state):
         start, end = self.get_subtree(random_state)
+        end -= 1
+        removed = range(start, end)
         donor_start, donor_end = self.get_subtree(random_state, donor)
         donor_removed = list(set(range(len(donor))) -
                              set(range(donor_start, donor_end)))
         return (self._program[:start] +
                 donor[donor_start:donor_end] +
-                self._program[end:])
+                self._program[end:]), removed, donor_removed
     ##树变异        
     def subtree_mutation(self, random_state):
         chicken = self.build_program(random_state)
@@ -168,7 +189,7 @@ class Program(object):
         hoist = subtree[sub_start:sub_end]
         removed = list(set(range(start, end)) -
                        set(range(start + sub_start, start + sub_end)))
-        return self._program[:start] + hoist + self._program[end:]
+        return self._program[:start] + hoist + self._program[end:],removed
     
     ##点变异
     def point_mutation(self, random_state):
@@ -177,7 +198,7 @@ class Program(object):
                           self._p_point_replace)[0]
         
         for node in mutate:
-            if program[node] in operators_sets:
+            if program[node] in self._operators_set:
                 activy = program[node].arity
                 #找到参数个数替换
                 if activy == 1:
@@ -188,4 +209,27 @@ class Program(object):
             else:
                 factor = self._factor_sets[np.random.randint(0,len(self._factor_sets)-1)]
                 program[node] = factor
-        return program
+        return program, list(mutate)
+    
+    def raw_fitness(self, total_data, factor_sets, default_value, indexs=['trade_date'], key='code'):
+        #计算因子值
+        try:
+            expression = self.transform()
+            if expression is None:
+                self._raw_fitness = default_value
+                self._is_valid = False
+            else:
+                factor_data = calc_factor(expression, total_data, indexs, key)
+                factor_data = factor_data.replace([np.inf, -np.inf], np.nan)
+                ##检测覆盖率
+                coverage_rate  =  1 - factor_data['transformed'].isna().sum() / len(factor_data['transformed'])
+                if coverage_rate < self._coverage_rate:
+                    self._raw_fitness = default_value
+                    self._is_valid = False
+                else:
+                    raw_fitness = self._fitness(factor_data, total_data, factor_sets)
+                    self._raw_fitness = default_value if np.isnan(raw_fitness) else raw_fitness
+        except Exception as e:
+            print(e)
+            self._raw_fitness = default_value
+            self._is_valid = False

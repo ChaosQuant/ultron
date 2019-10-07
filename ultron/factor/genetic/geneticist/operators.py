@@ -40,11 +40,12 @@ class Function(object):
     def __init__(self, function, arity):
         self.function = function
         self.arity = arity
+        self.name = function.__name__
 
 @six.add_metaclass(Singleton)
 class Operators(object):
     def __init__(self):
-        self._cross_section_mutation_list = [SecurityCurrentValueHolder,SecurityDiffValueHolder,
+        self._cross_section_mutation_list = [SecurityDiffValueHolder,
                                SecuritySignValueHolder,SecurityExpValueHolder,
                                SecurityLogValueHolder,SecuritySqrtValueHolder,
                                SecurityAbsValueHolder,SecurityNormInvValueHolder,
@@ -67,7 +68,11 @@ class Operators(object):
         
         self._mutation_sets = [Function(f, 1) for f in self._mutation_list]
         self._crossover_sets = [Function(f, 2) for f in self._crossover_list]
-       
+      
+    def calc_factor(self, expression, total_data, indexs, key):
+        return eval(expression).transform(total_data.set_index(indexs), 
+                                         category_field=key, dropna=False)
+        
     def fetch_mutation_sets(self):
         return self._mutation_sets
     
@@ -77,3 +82,4 @@ class Operators(object):
 mutation_sets = Operators().fetch_mutation_sets()
 crossover_sets = Operators().fetch_crossover_sets()
 operators_sets = mutation_sets + crossover_sets
+calc_factor = Operators().calc_factor
