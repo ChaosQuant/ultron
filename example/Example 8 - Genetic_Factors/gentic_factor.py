@@ -22,9 +22,12 @@ with open('factor_data.pkl','rb') as file2:
     total_data = pickle.load(file2)
     
 factor_sets = [i for i in list(set(total_data.columns)) if i not in ['trade_date','code','ret']]
-gentic = Gentic(population_size=10, tournament_size = 3, n_jobs = 4, stopping_criteria=100,
+gentic = Gentic(population_size=30, tournament_size = 7, 
+                init_depth=(4, 5),
+                generations=3, n_jobs = 8, stopping_criteria=100, verbose=1,
                 factor_sets = factor_sets,
                 fitness=websim_weighted)
+
 
 gentic.train(total_data=total_data)
 result = gentic._run_details
