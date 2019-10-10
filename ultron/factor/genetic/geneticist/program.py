@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import pdb,hashlib
 import numpy as np
 from copy import copy
-import pdb
+import pdb, time, datetime
+from .... utilities.short_uuid import decode
 from . operators import crossover_sets,mutation_sets,operators_sets,calc_factor, Function
 
 import warnings
@@ -34,7 +36,19 @@ class Program(object):
         self._parents = parents
         if self._program is None:
             self._program = self.build_program(random_state)
+        self.create_identification()
     
+    def create_identification(self):
+        token = ''
+        for node in self._program:
+            if isinstance(node,Function):
+                token += node.name
+            else:
+                token += node
+        m = hashlib.md5()
+        m.update(bytes(token, encoding='UTF-8'))
+        self._identification = m.hexdigest()
+        
     def _create_formual(self, apply_formual):
         function = apply_formual[0]
         formula = function.function.__name__
@@ -230,6 +244,5 @@ class Program(object):
                     raw_fitness = self._fitness(factor_data, total_data, factor_sets)
                     self._raw_fitness = default_value if np.isnan(raw_fitness) else raw_fitness
         except Exception as e:
-            print(e)
             self._raw_fitness = default_value
             self._is_valid = False
