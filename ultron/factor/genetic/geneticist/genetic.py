@@ -211,14 +211,22 @@ class Gentic(object):
             else:
                 best_programs = np.array(population)[np.argsort(fitness)[:self._tournament_size]]
             
-            #best_programs = [program for program in best_programs if program._is_valid]
             if self._best_programs is not None:
                 current_programs = np.concatenate([best_programs,self._best_programs])
+                identification_dict = {}
+                for program in current_programs:
+                    identification_dict[program._identification] = program
+                current_programs = list(identification_dict.values())
                 current_fitness = [program._raw_fitness for program in current_programs]
                 if self._greater_is_better:
                     best_programs = np.array(current_programs)[np.argsort(current_fitness)[-self._tournament_size:]]
                 else:
                     best_programs = np.array(current_programs)[np.argsort(current_fitness)[:self._tournament_size]]
+            else:
+                identification_dict = {}
+                for program in best_programs:
+                    identification_dict[program._identification] = program
+                best_programs = list(identification_dict.values())
             self._best_programs = best_programs
             
             self._run_details['generation'].append(gen)
@@ -226,8 +234,8 @@ class Gentic(object):
             self._run_details['best_fitness'].append(self._best_programs[0]._raw_fitness)
             generation_time = time.time() - start_time
             self._run_details['generation_time'].append(generation_time)
-            self._run_details['best_programs'].append(self._best_programs) 
-            
+            self._run_details['best_programs'].append(self._best_programs)
+            print([program._raw_fitness for program in self._best_programs])
             
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
