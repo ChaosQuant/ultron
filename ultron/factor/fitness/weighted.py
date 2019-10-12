@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from . long_short import LongShortWeighted
-from . only_long import OnlyLongWeighted
+from . only_side import OnlySideWeighted
 
 class Weighted(object):
     @classmethod
@@ -13,4 +13,4 @@ class Weighted(object):
         if method == 'longshort':
             return LongShortWeighted
         else:
-            return OnlyLongWeighted
+            return OnlySideWeighted
