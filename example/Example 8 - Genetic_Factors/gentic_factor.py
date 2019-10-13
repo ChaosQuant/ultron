@@ -11,7 +11,7 @@ import multiprocessing
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-
+from ultron.utilities.mlog import MLog
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -75,6 +75,7 @@ def nan_rate(params):
     coverage_rate  =  1 - np.isnan(data).sum()/ len(data)
     return {'rate':coverage_rate,'name':name}
 
+MLog().config(name='gentic_factor')
 #读取数据
 universe = 'hs300'
 with open('./' + str(universe) + '_fac_results.pkl','rb') as file2:
@@ -103,7 +104,7 @@ ndiff_field = ['trade_date','code','ret'] + risk_styles
 total_data = total_data.sort_values(by=['trade_date','code'],ascending=True)
 
 total_data = total_data.set_index('trade_date'
-                                 ).loc[total_data.trade_date.unique()[0:120]].reset_index()
+                                 ).loc[total_data.trade_date.unique()[0:20]].reset_index()
 
 #数据处理
 alpha_res = []

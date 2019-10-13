@@ -9,6 +9,7 @@ from . program import Program
 from . operators import operators_sets
 from .... utilities.jobs import partition_estimators
 from .... utilities.utils import check_random_state
+from .... utilities.mlog import MLog
 
 MAX_INT = np.iinfo(np.int32).max
 MIN_INT = np.iinfo(np.int32).min
@@ -235,8 +236,11 @@ class Gentic(object):
             generation_time = time.time() - start_time
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
-            print([program._raw_fitness for program in self._best_programs])
-            
+            raw_fitness_array = np.array([program._raw_fitness for program in self._best_programs])
+            MLog().write().info(
+                'Generation:%d,Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
+                gen, raw_fitness_array.mean(), raw_fitness_array.max(), raw_fitness_array.min()
+            ))
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
                 if best_fitness >= self._stopping_criteria:
