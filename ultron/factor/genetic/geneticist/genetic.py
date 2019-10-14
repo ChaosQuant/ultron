@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import pdb,time
-import itertools
+import pdb,time,datetime,pickle,itertools,os
 from joblib import Parallel, delayed
 from copy import copy
 from . program import Program
@@ -98,6 +97,8 @@ class Gentic(object):
                 p_point_replace=0.05,
                 greater_is_better=True,#True 倒序， False 正序
                 verbose=1,
+                is_save=1,
+                out_dir='result',
                 low_memory = False,
                 fitness=None,
                 random_state=None):
@@ -121,7 +122,22 @@ class Gentic(object):
         self._n_jobs = n_jobs
         self._low_memory = low_memory
         self._verbose = verbose
+        self._is_save = is_save
+        self._out_dir = out_dir
+        self._session = int(time.time() * 1000000 + datetime.datetime.now().microsecond)
+        MLog().config(name='Gentic')
      
+    
+    def save_model(self, gen, best_programs):
+        result_list = [{'transform':program.transform(),
+                       'fitness':program._raw_fitness} for program in best_programs]
+        out_dir = os.path.join(self._out_dir, str(self._session))
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        filename = os.path.join(out_dir, 'ultron_' + str(gen) + '.pkl')
+        with open(filename, 'wb') as f:
+            pickle.dump([result_list], f)
+        
         
     def train(self, total_data):
         random_state = check_random_state(self._random_state)
@@ -241,6 +257,10 @@ class Gentic(object):
                 'Generation:%d,Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
                 gen, raw_fitness_array.mean(), raw_fitness_array.max(), raw_fitness_array.min()
             ))
+            #保存每代信息
+            if self._is_save:
+                self.save_model(gen, self._run_details['best_programs'][-1])
+            
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
                 if best_fitness >= self._stopping_criteria:
