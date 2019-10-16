@@ -11,7 +11,6 @@ import multiprocessing
 from alphamind.data.processing import factor_processing
 from alphamind.data.standardize import standardize
 from alphamind.data.winsorize import winsorize_normal
-from ultron.utilities.mlog import MLog
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -75,7 +74,6 @@ def nan_rate(params):
     coverage_rate  =  1 - np.isnan(data).sum()/ len(data)
     return {'rate':coverage_rate,'name':name}
 
-MLog().config(name='gentic_factor')
 #读取数据
 universe = 'hs300'
 with open('./' + str(universe) + '_fac_results.pkl','rb') as file2:
@@ -153,7 +151,7 @@ now_data = standard_data.groupby(['code']).apply(shift_ret)
 standard_data = now_data.set_index('code').reset_index().sort_values(by=['trade_date','code'],ascending=True)
 
 gentic = Gentic(population_size=100, tournament_size = 10, 
-                init_depth=(4, 5),
+                init_depth=(4, 6),
                 generations=4, n_jobs = 8, stopping_criteria=100, verbose=1,
                 factor_sets = factor_sets,
                 fitness=websim_weighted)
