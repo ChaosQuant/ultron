@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import numpy as np
 from .... utilities.singleton import Singleton
 from ultron.sentry.Analysis.SecurityValueHolders import SecurityLatestValueHolder
 from ultron.sentry.Analysis.SecurityValueHolders import SecurityCurrentValueHolder
@@ -103,19 +104,24 @@ class Function(object):
 @six.add_metaclass(Singleton)
 class Operators(object):
     def __init__(self):
+       
+        # 时间序列默认周期列表
+        self._ts_period = [1, 3, 5, 7 ,9]
+        
         self._init_cs()
         self._init_ts()
         
         self._cs_mutation_function_list = [Function(f, 1, FunctionType.cross_section) for f in self._cross_section_mutation_list]
         self._cs_crossover_function_list = [Function(f, 2, FunctionType.cross_section) for f in self._cross_section_crossover_list]
-        
         #时间序列默认为5天
-        self._ts_mutation_function_list = [Function(f, 1, FunctionType.time_series, 5) for f in self._time_series_mutation_list]
-        self._ts_crossover_function_list = [Function(f, 2, FunctionType.time_series, 5) for f in self._time_series_crossover_list]
+        self._ts_mutation_function_list = [Function(f, 1, FunctionType.time_series, self._ts_period[np.random.randint(0, len(self._ts_period))]
+                                                   ) for f in self._time_series_mutation_list]
+        self._ts_crossover_function_list = [Function(f, 2, FunctionType.time_series, self._ts_period[np.random.randint(0, len(self._ts_period))]
+                                                    ) for f in self._time_series_crossover_list]
         
         self._mutation_sets = self._cs_mutation_function_list + self._ts_mutation_function_list
         self._crossover_sets = self._cs_crossover_function_list + self._ts_crossover_function_list
-      
+
     
     def _init_cs(self):
         self._cross_section_mutation_list = [SecurityAverageValueHolder,SecurityDiffValueHolder,

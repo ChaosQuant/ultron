@@ -85,7 +85,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, p
         
 class Gentic(object):
     def __init__(self, population_size=2000,
-                generations=20,tournament_size=20,
+                generations=MAX_INT,tournament_size=20,
                 stopping_criteria=0.0, factor_sets=None,
                 init_depth=(5, 6),init_method='full',
                 operators_set=operators_sets,
@@ -157,7 +157,8 @@ class Gentic(object):
                 best_programs = np.array([program for program in valid_prorams if program._raw_fitness > self._standard_score])
             else:
                 best_programs = np.array([program for program in valid_prorams if program._raw_fitness < self._standard_score])
-        else:
+        #若不满足分数，则进行排序选出前_tournament_size
+        if len(best_programs) == 0 or self._standard_score is None:
             if self._greater_is_better:
                 best_programs = np.array(valid_prorams)[np.argsort(fitness)[-self._tournament_size:]]
             else:
@@ -247,7 +248,6 @@ class Gentic(object):
                 self._programs[gen - 1] = None
             
             
-            pdb.set_trace()
             best_programs = self.filter_programs(population)
             
             
@@ -264,10 +264,9 @@ class Gentic(object):
             generation_time = time.time() - start_time
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
-            raw_fitness_array = np.array([program._raw_fitness for program in self._best_programs])
             MLog().write().info(
-                'Generation:%d,Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
-                gen, raw_fitness_array.mean(), raw_fitness_array.max(), raw_fitness_array.min()
+                'Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
+                gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
             ))
             #保存每代信息
             if self._is_save:
@@ -280,4 +279,4 @@ class Gentic(object):
             else:
                 best_fitness = fitness[np.argmin(fitness)]
                 if best_fitness <= self._stopping_criteria:
-                    break            
+                    break
