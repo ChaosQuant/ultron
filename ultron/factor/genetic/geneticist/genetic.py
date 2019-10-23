@@ -102,7 +102,8 @@ class Gentic(object):
                 out_dir='result',
                 low_memory = False,
                 fitness=None,
-                random_state=None):
+                random_state=None,
+                save_model=None):
         self._population_size = population_size
         self._generations = generations
         self._tournament_size = tournament_size
@@ -127,6 +128,10 @@ class Gentic(object):
         self._is_save = is_save
         self._out_dir = out_dir
         self._session = int(time.time() * 1000000 + datetime.datetime.now().microsecond)
+        self._save_model = self.save_model
+        if save_model is None:
+            self._save_model = self.save_model
+            
         MLog().config(name='Gentic')
      
     
@@ -273,7 +278,7 @@ class Gentic(object):
             ))
             #保存每代信息
             if self._is_save:
-                self.save_model(gen, self._run_details['best_programs'][-1])
+                self._save_model(gen, self._run_details['best_programs'][-1])
             
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
