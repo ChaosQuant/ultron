@@ -4,7 +4,8 @@ import numpy as np
 from copy import copy
 import pdb, time, datetime
 from .... utilities.short_uuid import decode
-from . operators import crossover_sets,mutation_sets,operators_sets,calc_factor, Function
+from .... utilities.mlog import MLog
+from . operators import crossover_sets,mutation_sets,operators_sets,calc_factor, Function, FunctionType
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -16,6 +17,7 @@ class Program(object):
                  p_point_replace,
                  function_set,
                  operators_set,
+                 gen,
                  fitness,
                  coverage_rate=0.5,
                  n_features=0,
@@ -31,28 +33,46 @@ class Program(object):
         self._n_features = n_features
         self._fitness = fitness
         self._coverage_rate = coverage_rate
+        self._gen = gen
         self._raw_fitness = None # fitness得分
         self._is_valid = True
         self._parents = parents
+        self._name = 'ultron_' + str(int(time.time() * 1000000 + datetime.datetime.now().microsecond))
         if self._program is None:
             self._program = self.build_program(random_state)
         self.create_identification()
     
+    def log(self):
+        parents = {'method':'gen'} if self._parents is None else self._parents
+        formual = self.transform()
+        identification = self._identification
+        name = self._name
+        MLog().write().info(
+            'name:%s,method:%s,gen:%d,formual:%s,fitness:%f,identification:%s'%(
+                name, str(parents['method']),self._gen,formual,self._raw_fitness,
+                identification))
+    
+    # 交叉变异时会出生成无效子代，需要进行优化
+    # 如 ['CurrentAssetsTRate', 'CurrentAssetsTRate', 'rskew_std']
     def create_identification(self):
-        token = ''
-        for node in self._program:
-            if isinstance(node,Function):
-                token += node.name
-            else:
-                token += node
         m = hashlib.md5()
+        try:
+            token = self.transform()
+        except Exception as e:
+            #ID为key
+            token = self._name
+        if token is None:
+            token = self._name 
         m.update(bytes(token, encoding='UTF-8'))
         self._identification = m.hexdigest()
-        
-    def _create_formual(self, apply_formual):
+      
+    def create_formual(self, apply_formual):
         function = apply_formual[0]
         formula = function.function.__name__
-        formula +='('
+        if function.ftype == FunctionType.cross_section:
+            formula +='('
+        else:
+            formula +=('(' + str(function.default_value) + ',')
         for i in range(0,function.arity):
             if i != 0:
                 formula += ','
@@ -66,7 +86,6 @@ class Program(object):
     def transform(self):
         if len(self._program) < 2:
             result = 'SecurityCurrentValueHolder(\'' + self._program[0] + '\')'
-            print(result)
             return result
         apply_stack = []
         for node in self._program:
@@ -75,12 +94,12 @@ class Program(object):
             else:
                 apply_stack[-1].append(node)
             while len(apply_stack[-1]) == apply_stack[-1][0].arity + 1:
-                result = self._create_formual(apply_stack[-1])
+                result = self.create_formual(apply_stack[-1])
                 if len(apply_stack) != 1:
                     apply_stack.pop()
                     apply_stack[-1].append(result)
                 else:
-                    return result
+                    return result 
         
     def export_graphviz(self):
         fade_nodes = None

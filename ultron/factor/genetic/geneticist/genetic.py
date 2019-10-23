@@ -14,7 +14,7 @@ MAX_INT = np.iinfo(np.int32).max
 MIN_INT = np.iinfo(np.int32).min
 
 
-def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, params):
+def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, gen, params):
     tournament_size = params['tournament_size']
     function_set = params['function_set']
     operators_set = params['operators_set']
@@ -24,6 +24,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, p
     p_point_replace = params['p_point_replace']
     factor_sets = params['factor_sets']
     fitness = params['fitness']
+    
     def _tournament(tour_parents):
         contenders = random_state.randint(0, len(tour_parents), tournament_size)
         raw_fitness = [tour_parents[p]._raw_fitness for p in contenders]
@@ -70,13 +71,12 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, p
                 genome = {'method': 'Reproduction',
                           'parent_idx': parent_index,
                           'parent_nodes': []}
-        
+                
         program = Program(init_depth=init_depth, method=init_method, random_state=random_state,
                           factor_sets=factor_sets, function_set=function_set,
-                          operators_set = operators_set,
+                          operators_set = operators_set, gen = gen,
                           p_point_replace=p_point_replace, fitness=params['fitness'],
                           n_features=2, program=program, parents=genome)
-        
         default_value = MIN_INT if greater_is_better else MAX_INT
         program.raw_fitness(total_data, factor_sets, default_value=default_value)
         
@@ -85,7 +85,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, p
         
 class Gentic(object):
     def __init__(self, population_size=2000,
-                generations=20,tournament_size=20,
+                generations=MAX_INT,tournament_size=20,
                 stopping_criteria=0.0, factor_sets=None,
                 init_depth=(5, 6),init_method='full',
                 operators_set=operators_sets,
@@ -98,6 +98,7 @@ class Gentic(object):
                 greater_is_better=True,#True 倒序， False 正序
                 verbose=1,
                 is_save=1,
+                standard_score=2,#None代表 根据tournament_size保留种群  standard_score保留种群
                 out_dir='result',
                 low_memory = False,
                 fitness=None,
@@ -118,6 +119,7 @@ class Gentic(object):
         self._p_point_replace = p_point_replace
         self._random_state = random_state
         self._greater_is_better = greater_is_better
+        self._standard_score = standard_score
         self._fitness = fitness
         self._n_jobs = n_jobs
         self._low_memory = low_memory
@@ -138,6 +140,31 @@ class Gentic(object):
         with open(filename, 'wb') as f:
             pickle.dump([result_list], f)
         
+     
+    def filter_programs(self, gen, population):
+        ## 保留符合条件的种群(1.种群有效 2.分数优于基准分 3.符合指定个数)
+        valid_prorams = np.array(population)[[program._is_valid for program in population]] # 只保留有效种群
+        
+        ## 删除重复种群
+        identification_dict = {}
+        for program in valid_prorams:
+            identification_dict[program._identification] = program
+            
+        valid_prorams = list(identification_dict.values())
+        fitness = [program._raw_fitness for program in valid_prorams]
+        if self._standard_score is not None: #分数筛选且第二代开始
+            if self._greater_is_better:
+                best_programs = np.array([program for program in valid_prorams if program._raw_fitness > self._standard_score])
+            else:
+                best_programs = np.array([program for program in valid_prorams if program._raw_fitness < self._standard_score])
+        
+        #若不满足分数，则进行排序选出前_tournament_size
+        if len(best_programs) < self._tournament_size or self._standard_score is None:
+            if self._greater_is_better:
+                best_programs = np.array(valid_prorams)[np.argsort(fitness)[-self._tournament_size:]]
+            else:
+                best_programs = np.array(valid_prorams)[np.argsort(fitness)[:self._tournament_size]]
+        return best_programs
         
     def train(self, total_data):
         random_state = check_random_state(self._random_state)
@@ -174,7 +201,7 @@ class Gentic(object):
         params['method_probs'] = self._method_probs
         params['p_point_replace'] = self._p_point_replace
         params['factor_sets'] = self._factor_sets
-        params['fitness'] = self._fitness 
+        params['fitness'] = self._fitness
     
         self._programs = []
         self._best_programs = None
@@ -193,6 +220,7 @@ class Gentic(object):
                 parents = None
             else:
                 parents = self._programs[gen - 1]
+                parents = [parent for parent in parents if parent is not None]
                 
             n_jobs, n_programs, starts = partition_estimators(
                 self._population_size, self._n_jobs)
@@ -200,11 +228,10 @@ class Gentic(object):
             seeds = random_state.randint(MAX_INT, size=self._population_size)
             population = Parallel(n_jobs=n_jobs,
                                   verbose=self._verbose)(
-                delayed(parallel_evolve)(n_programs[i], parents, total_data, seeds, self._greater_is_better, params)
+                delayed(parallel_evolve)(n_programs[i], parents, total_data, seeds, self._greater_is_better, gen, params)
                 for i in range(n_jobs))
             
             population = list(itertools.chain.from_iterable(population))
-            fitness = [program._raw_fitness for program in population]
             
             self._programs.append(population)
             
@@ -223,39 +250,26 @@ class Gentic(object):
                 self._programs[gen - 1] = None
             
             
-            if self._greater_is_better:
-                best_programs = np.array(population)[np.argsort(fitness)[-self._tournament_size:]]
-            else:
-                best_programs = np.array(population)[np.argsort(fitness)[:self._tournament_size]]
+            best_programs = self.filter_programs(gen, population)
+            
             
             if self._best_programs is not None:
-                current_programs = np.concatenate([best_programs,self._best_programs])
-                identification_dict = {}
-                for program in current_programs:
-                    identification_dict[program._identification] = program
-                current_programs = list(identification_dict.values())
-                current_fitness = [program._raw_fitness for program in current_programs]
-                if self._greater_is_better:
-                    best_programs = np.array(current_programs)[np.argsort(current_fitness)[-self._tournament_size:]]
-                else:
-                    best_programs = np.array(current_programs)[np.argsort(current_fitness)[:self._tournament_size]]
-            else:
-                identification_dict = {}
-                for program in best_programs:
-                    identification_dict[program._identification] = program
-                best_programs = list(identification_dict.values())
+                best_programs = np.concatenate([best_programs,self._best_programs])
+                best_programs = self.filter_programs(gen, best_programs)
+                
             self._best_programs = best_programs
-            
+            for program in self._best_programs:
+                program.log()
+            fitness = [program._raw_fitness for program in self._best_programs]
             self._run_details['generation'].append(gen)
             self._run_details['average_fitness'].append(np.mean(fitness))
             self._run_details['best_fitness'].append(self._best_programs[0]._raw_fitness)
             generation_time = time.time() - start_time
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
-            raw_fitness_array = np.array([program._raw_fitness for program in self._best_programs])
             MLog().write().info(
-                'Generation:%d,Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
-                gen, raw_fitness_array.mean(), raw_fitness_array.max(), raw_fitness_array.min()
+                'Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
+                gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
             ))
             #保存每代信息
             if self._is_save:
@@ -268,4 +282,4 @@ class Gentic(object):
             else:
                 best_fitness = fitness[np.argmin(fitness)]
                 if best_fitness <= self._stopping_criteria:
-                    break            
+                    break
