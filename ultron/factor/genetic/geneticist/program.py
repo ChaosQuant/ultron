@@ -37,6 +37,7 @@ class Program(object):
         self._raw_fitness = None # fitness得分
         self._is_valid = True
         self._parents = parents
+        self._create_time = datetime.datetime.now()
         self._name = 'ultron_' + str(int(time.time() * 1000000 + datetime.datetime.now().microsecond))
         if self._program is None:
             self._program = self.build_program(random_state)
@@ -51,6 +52,12 @@ class Program(object):
             'name:%s,method:%s,gen:%d,formual:%s,fitness:%f,identification:%s'%(
                 name, str(parents['method']),self._gen,formual,self._raw_fitness,
                 identification))
+    
+    def output(self):
+        parents = {'method':'Gen'} if self._parents is None else self._parents
+        return {'name':self._name,'method':parents['method'],'gen':self._gen,
+               'formual':self.transform(),'fitness':self._raw_fitness,
+               'update_time':self._create_time}
     
     # 交叉变异时会出生成无效子代，需要进行优化
     # 如 ['CurrentAssetsTRate', 'CurrentAssetsTRate', 'rskew_std']
@@ -244,7 +251,8 @@ class Program(object):
                 program[node] = factor
         return program, list(mutate)
     
-    def raw_fitness(self, total_data, factor_sets, default_value, indexs=['trade_date'], key='code'):
+    def raw_fitness(self, total_data, factor_sets, default_value, backup_cycle,
+                    indexs=['trade_date'], key='code'):
         #计算因子值
         try:
             expression = self.transform()
@@ -253,14 +261,18 @@ class Program(object):
                 self._is_valid = False
             else:
                 factor_data = calc_factor(expression, total_data, indexs, key)
+                #切割掉备份周期
                 factor_data = factor_data.replace([np.inf, -np.inf], np.nan)
+                factor_data = factor_data.loc[factor_data.index.unique()[backup_cycle:]]
                 ##检测覆盖率
                 coverage_rate  =  1 - factor_data['transformed'].isna().sum() / len(factor_data['transformed'])
                 if coverage_rate < self._coverage_rate:
                     self._raw_fitness = default_value
                     self._is_valid = False
                 else:
-                    raw_fitness = self._fitness(factor_data, total_data, factor_sets)
+                    cycle_total_data = total_data.copy().set_index('trade_date')
+                    cycle_total_data = cycle_total_data.loc[cycle_total_data.index.unique()[backup_cycle:]]
+                    raw_fitness = self._fitness(factor_data, cycle_total_data.reset_index(), factor_sets)
                     self._raw_fitness = default_value if np.isnan(raw_fitness) else raw_fitness
         except Exception as e:
             self._raw_fitness = default_value

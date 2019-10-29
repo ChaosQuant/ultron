@@ -24,6 +24,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
     p_point_replace = params['p_point_replace']
     factor_sets = params['factor_sets']
     fitness = params['fitness']
+    backup_cycle = params['backup_cycle']
     
     def _tournament(tour_parents):
         contenders = random_state.randint(0, len(tour_parents), tournament_size)
@@ -43,7 +44,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
         else:
             method = random_state.uniform()
             parent, parent_index = _tournament(copy(parents))
-            if method < method_probs[0]: # crossover
+            if method < method_probs[3]: # point_mutation
                 donor, donor_index = _tournament(copy(parents))
                 program, removed, remains = parent.crossover(donor._program, random_state)
                 genome = {'method':'Crossover',
@@ -51,17 +52,17 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
                          'parent_nodes':removed,
                          'donor_idx':donor_index,
                          'donor_nodes':remains}
-            elif method < method_probs[1]: #  subtree_mutation
+            elif method < method_probs[0]: # crossover
                 program, removed, _ = parent.subtree_mutation(random_state)
                 genome = {'method': 'Subtree Mutation',
                           'parent_idx': parent_index,
                           'parent_nodes': removed}
-            elif method < method_probs[2]: # hoist_mutation
+            elif method < method_probs[1]: #  subtree_mutation 
                 program, removed = parent.hoist_mutation(random_state)
                 genome = {'method': 'Hoist Mutation',
                           'parent_idx': parent_index,
                           'parent_nodes': removed}
-            elif method < method_probs[3]: # point_mutation
+            elif method < method_probs[2]: # hoist_mutation
                 program,mutated = parent.point_mutation(random_state)
                 genome = {'method': 'Point Mutation',
                           'parent_idx': parent_index,
@@ -78,7 +79,8 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
                           p_point_replace=p_point_replace, fitness=params['fitness'],
                           n_features=2, program=program, parents=genome)
         default_value = MIN_INT if greater_is_better else MAX_INT
-        program.raw_fitness(total_data, factor_sets, default_value=default_value)
+        program.raw_fitness(total_data, factor_sets, default_value=default_value,
+                           backup_cycle=backup_cycle)
         
         programs.append(program)
     return programs
@@ -98,8 +100,10 @@ class Gentic(object):
                 greater_is_better=True,#True 倒序， False 正序
                 verbose=1,
                 is_save=1,
-                standard_score=2,#None代表 根据tournament_size保留种群  standard_score保留种群
+                rootid=0,
+                standard_score=2,# None代表 根据tournament_size保留种群  standard_score保留种群
                 out_dir='result',
+                backup_cycle = 0,# 后备数据周期，主要用于在时间序列上的问题
                 low_memory = False,
                 fitness=None,
                 random_state=None,
@@ -123,22 +127,22 @@ class Gentic(object):
         self._standard_score = standard_score
         self._fitness = fitness
         self._n_jobs = n_jobs
+        self._backup_cycle = backup_cycle
         self._low_memory = low_memory
         self._verbose = verbose
         self._is_save = is_save
         self._out_dir = out_dir
+        self._rootid = int(time.time() * 1000000 + datetime.datetime.now().microsecond) if rootid == 0 else rootid
         self._session = int(time.time() * 1000000 + datetime.datetime.now().microsecond)
-        self._save_model = self.save_model
-        if save_model is None:
-            self._save_model = self.save_model
+        self._save_model = self.save_model if save_model is None else save_model
             
         MLog().config(name='Gentic')
      
     
-    def save_model(self, gen, best_programs):
+    def save_model(self, gen, rootid,  session, best_programs):
         result_list = [{'transform':program.transform(),
                        'fitness':program._raw_fitness} for program in best_programs]
-        out_dir = os.path.join(self._out_dir, str(self._session))
+        out_dir = os.path.join(self._out_dir, str(session))
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         filename = os.path.join(out_dir, 'ultron_' + str(gen) + '.pkl')
@@ -207,6 +211,7 @@ class Gentic(object):
         params['p_point_replace'] = self._p_point_replace
         params['factor_sets'] = self._factor_sets
         params['fitness'] = self._fitness
+        params['backup_cycle'] = self._backup_cycle
     
         self._programs = []
         self._best_programs = None
@@ -276,9 +281,10 @@ class Gentic(object):
                 'Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
                 gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
             ))
+            
             #保存每代信息
             if self._is_save:
-                self._save_model(gen, self._run_details['best_programs'][-1])
+                self._save_model(gen, self._rootid,  self._session, self._run_details['best_programs'][-1])
             
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
