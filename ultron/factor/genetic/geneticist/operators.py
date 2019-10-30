@@ -21,6 +21,8 @@ from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityCeilValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityFloorValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityRoundValueHolder
+from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecuritySigmoidValueHolder
+from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityTanhValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecuritySimpleReturnValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecurityLogReturnValueHolder
 from ultron.sentry.Analysis.TechnicalAnalysis.StatelessTechnicalAnalysers import SecuritySigmoidValueHolder
@@ -121,7 +123,7 @@ class Operators(object):
         
         self._mutation_sets = self._cs_mutation_function_list + self._ts_mutation_function_list
         self._crossover_sets = self._cs_crossover_function_list + self._ts_crossover_function_list
-
+        
     
     def _init_cs(self):
         self._cross_section_mutation_list = [SecurityAverageValueHolder,SecurityDiffValueHolder,
@@ -166,9 +168,14 @@ class Operators(object):
         ]
         
         
-    def calc_factor(self, expression, total_data, indexs, key):
+    def custom_transformer(self, formula_sets):
+        operators_sets =  self._mutation_sets + self._crossover_sets
+        return [operator for operator in operators_sets if operator.name in formula_sets]
+        
+    def calc_factor(self, expression, total_data, indexs, key, name='transformed'):
         return eval(expression).transform(total_data.set_index(indexs), 
-                                         category_field=key, dropna=False)
+                                         category_field=key, name=name,
+                                          dropna=False)
         
     def fetch_mutation_sets(self):
         return self._mutation_sets
@@ -180,3 +187,4 @@ mutation_sets = Operators().fetch_mutation_sets()
 crossover_sets = Operators().fetch_crossover_sets()
 operators_sets = mutation_sets + crossover_sets
 calc_factor = Operators().calc_factor
+custom_transformer = Operators().custom_transformer
