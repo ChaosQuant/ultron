@@ -94,7 +94,7 @@ class HighFrequencyWeighted(object):
         return stats_df
     
     def run(self, factor_data, risk_data, mkt_df, default_value,
-            factor_name, horizon=1, keys='bar30_vwap', 
+            factor_name, risk_styles = None, horizon=1, keys='bar30_vwap', 
             method='quantile', up_limit=0.025, down_limit=0.025,
             init_capital=100000):
         """
@@ -103,20 +103,25 @@ class HighFrequencyWeighted(object):
         """
         
         factor_se = factor_data.set_index(['trade_date','code'])
-        risk_se = risk_data.set_index(['trade_date','code'])
+        risk_se = risk_data.set_index(['tr ade_date','code'])
         mkt_df = mkt_df.set_index(['trade_date','code'])
-        risk_df = risk_se.reindex(factor_se.index)[self._industry_styles + ['SIZE']]
+        risk_styles = self._risk_styles if risk_styles is None else risk_styles
+        
+
+        risk_df = risk_se.reindex(factor_se.index)[self._industry_styles + risk_styles]
         risk_df.dropna(inplace=True)
         factor_se = factor_se.loc[risk_df.index][factor_name]
         mkt_se = mkt_df.loc[risk_df.index]
+
+        
         # forward returns
         # use four different prices; closePrice, openPrice, bar30_vwap, bar60_vwap
         #return_se_dict = {}
         price_tb = mkt_se[keys].unstack()
         return_tb = (price_tb.shift(-horizon) / price_tb - 1.0)
         return_tb[return_tb>10.0] = np.NaN
-        if keys in ['openPrice', 'bar30_vwap', 'bar60_vwap']:
-            return_tb = return_tb.shift(-1)
+        #if keys in ['openPrice', 'bar30_vwap', 'bar60_vwap']:
+        return_tb = return_tb.shift(-1)
         
         return_se = return_tb.stack()
             
