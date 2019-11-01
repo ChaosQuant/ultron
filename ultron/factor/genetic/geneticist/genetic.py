@@ -109,7 +109,7 @@ class Gentic(object):
                 random_state=None,
                 save_model=None):
         self._population_size = population_size
-        self._generations = generations
+        self._generations = MAX_INT if generations == 0 else generations
         self._tournament_size = tournament_size
         self._stopping_criteria = stopping_criteria
         self._factor_sets = factor_sets
@@ -278,8 +278,8 @@ class Gentic(object):
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
             MLog().write().info(
-                'Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
-                gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
+                'ExpendTime:%f,Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
+                generation_time, gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
             ))
             
             #保存每代信息
