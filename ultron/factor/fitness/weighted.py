@@ -7,6 +7,7 @@ import statsmodels.api as sm
 from . long_short import LongShortWeighted
 from . only_side import OnlySideWeighted
 from . high_frequency import HighFrequencyWeighted
+from . basic_indicators import IC_Weighted
 
 class Weighted(object):
     @classmethod
@@ -17,5 +18,9 @@ class Weighted(object):
             return OnlySideWeighted()
         elif method == 'high_frequency':
             return HighFrequencyWeighted()
+        elif method == 'ic':
+            return IC_Weighted('ic')
+        elif method == 'ir':
+            return IC_Weighted('ir')
         else:
             return None

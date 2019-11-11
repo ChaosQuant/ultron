@@ -25,6 +25,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
     factor_sets = params['factor_sets']
     fitness = params['fitness']
     backup_cycle = params['backup_cycle']
+    custom_params = params['custom_params']
     
     def _tournament(tour_parents):
         contenders = random_state.randint(0, len(tour_parents), tournament_size)
@@ -80,7 +81,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
                           n_features=2, program=program, parents=genome)
         default_value = MIN_INT if greater_is_better else MAX_INT
         program.raw_fitness(total_data, factor_sets, default_value=default_value,
-                           backup_cycle=backup_cycle)
+                           backup_cycle=backup_cycle,custom_params=custom_params)
         
         programs.append(program)
     return programs
@@ -107,9 +108,10 @@ class Gentic(object):
                 low_memory = False,
                 fitness=None,
                 random_state=None,
+                custom_params = None,
                 save_model=None):
         self._population_size = population_size
-        self._generations = generations
+        self._generations = MAX_INT if generations == 0 else generations
         self._tournament_size = tournament_size
         self._stopping_criteria = stopping_criteria
         self._factor_sets = factor_sets
@@ -128,6 +130,7 @@ class Gentic(object):
         self._fitness = fitness
         self._n_jobs = n_jobs
         self._backup_cycle = backup_cycle
+        self._custom_params = custom_params
         self._low_memory = low_memory
         self._verbose = verbose
         self._is_save = is_save
@@ -212,6 +215,7 @@ class Gentic(object):
         params['factor_sets'] = self._factor_sets
         params['fitness'] = self._fitness
         params['backup_cycle'] = self._backup_cycle
+        params['custom_params'] = self._custom_params
     
         self._programs = []
         self._best_programs = None
@@ -230,7 +234,7 @@ class Gentic(object):
                 parents = None
             else:
                 parents = self._programs[gen - 1]
-                parents = [parent for parent in parents if parent is not None]
+                parents = [parent for parent in parents if parent._is_valid]
                 
             n_jobs, n_programs, starts = partition_estimators(
                 self._population_size, self._n_jobs)
@@ -243,8 +247,22 @@ class Gentic(object):
             
             population = list(itertools.chain.from_iterable(population))
             
-            self._programs.append(population)
+            #剔除无效因子
+            population = [program for program in population if program._is_valid]
             
+            
+            
+            if self._best_programs is None:
+                self._programs.append(population)
+            else:
+                identification_dict = {}
+                valid_prorams = list(np.concatenate([population,self._best_programs]))
+                for program in valid_prorams:
+                    identification_dict[program._identification] = program
+                valid_prorams = list(identification_dict.values())
+                self._programs.append(valid_prorams)
+            
+            '''
             if not self._low_memory:
                 for old_gen in np.arange(gen, 0, -1):
                     indices = []
@@ -253,11 +271,14 @@ class Gentic(object):
                             if 'parent_idx' in program._parents:
                                 indices.append(program._parents['parent_idx'])
                     indices = set(indices)
-                    for idx in range(self._population_size):
+                    population_size = len(population)
+                    pdb.set_trace()
+                    for idx in range(population_size):
                         if idx not in indices:
                             self._programs[old_gen - 1][idx] = None 
             elif gen > 0:
                 self._programs[gen - 1] = None
+            '''
             
             
             best_programs = self.filter_programs(gen, population)
@@ -278,13 +299,14 @@ class Gentic(object):
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
             MLog().write().info(
-                'Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
-                gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
+                'ExpendTime:%f,Generation:%d,Tournament:%d, Fitness Mean:%f,Fitness Max:%f,Fitness Min:%f'%(
+                generation_time, gen, len(best_programs), np.mean(fitness), np.max(fitness), np.min(fitness)
             ))
             
             #保存每代信息
             if self._is_save:
-                self._save_model(gen, self._rootid,  self._session, self._run_details['best_programs'][-1])
+                self._save_model(gen, self._rootid,  self._session, self._run_details['best_programs'][-1], 
+                                 self._custom_params)
             
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]

@@ -103,7 +103,7 @@ class HighFrequencyWeighted(object):
         """
         
         factor_se = factor_data.set_index(['trade_date','code'])
-        risk_se = risk_data.set_index(['tr ade_date','code'])
+        risk_se = risk_data.set_index(['trade_date','code'])
         mkt_df = mkt_df.set_index(['trade_date','code'])
         risk_styles = self._risk_styles if risk_styles is None else risk_styles
         
