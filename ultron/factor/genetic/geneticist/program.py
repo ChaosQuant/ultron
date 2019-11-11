@@ -43,6 +43,9 @@ class Program(object):
             self._program = self.build_program(random_state)
         self.create_identification()
     
+    def parent_idx(self):
+        return 0 if self._parents is None else self._parents['parent_idx']
+        
     def log(self):
         parents = {'method':'gen'} if self._parents is None else self._parents
         formual = self.transform()

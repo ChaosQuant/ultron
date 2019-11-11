@@ -230,7 +230,7 @@ class Gentic(object):
                 parents = None
             else:
                 parents = self._programs[gen - 1]
-                parents = [parent for parent in parents if parent is not None]
+                parents = [parent for parent in parents if parent._is_valid]
                 
             n_jobs, n_programs, starts = partition_estimators(
                 self._population_size, self._n_jobs)
@@ -243,8 +243,12 @@ class Gentic(object):
             
             population = list(itertools.chain.from_iterable(population))
             
+            #剔除无效因子
+            population = [program for program in population if program._is_valid]
+            
             self._programs.append(population)
             
+            '''
             if not self._low_memory:
                 for old_gen in np.arange(gen, 0, -1):
                     indices = []
@@ -253,11 +257,14 @@ class Gentic(object):
                             if 'parent_idx' in program._parents:
                                 indices.append(program._parents['parent_idx'])
                     indices = set(indices)
-                    for idx in range(self._population_size):
+                    population_size = len(population)
+                    pdb.set_trace()
+                    for idx in range(population_size):
                         if idx not in indices:
                             self._programs[old_gen - 1][idx] = None 
             elif gen > 0:
                 self._programs[gen - 1] = None
+            '''
             
             
             best_programs = self.filter_programs(gen, population)
