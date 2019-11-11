@@ -254,8 +254,8 @@ class Program(object):
                 program[node] = factor
         return program, list(mutate)
     
-    def raw_fitness(self, total_data, factor_sets, default_value, backup_cycle,
-                    indexs=['trade_date'], key='code'):
+    def raw_fitness(self, total_data, factor_sets, default_value, backup_cycle, 
+                    custom_params, indexs=['trade_date'], key='code'):
         #计算因子值
         try:
             expression = self.transform()
@@ -275,7 +275,8 @@ class Program(object):
                 else:
                     cycle_total_data = total_data.copy().set_index('trade_date')
                     cycle_total_data = cycle_total_data.loc[cycle_total_data.index.unique()[backup_cycle:]]
-                    raw_fitness = self._fitness(factor_data, cycle_total_data.reset_index(), factor_sets)
+                    raw_fitness = self._fitness(factor_data, cycle_total_data.reset_index(), factor_sets,
+                                                custom_params)
                     self._raw_fitness = default_value if np.isnan(raw_fitness) else raw_fitness
         except Exception as e:
             self._raw_fitness = default_value

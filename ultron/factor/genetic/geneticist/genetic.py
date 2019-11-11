@@ -25,6 +25,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
     factor_sets = params['factor_sets']
     fitness = params['fitness']
     backup_cycle = params['backup_cycle']
+    custom_params = params['custom_params']
     
     def _tournament(tour_parents):
         contenders = random_state.randint(0, len(tour_parents), tournament_size)
@@ -80,7 +81,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
                           n_features=2, program=program, parents=genome)
         default_value = MIN_INT if greater_is_better else MAX_INT
         program.raw_fitness(total_data, factor_sets, default_value=default_value,
-                           backup_cycle=backup_cycle)
+                           backup_cycle=backup_cycle,custom_params=custom_params)
         
         programs.append(program)
     return programs
@@ -107,6 +108,7 @@ class Gentic(object):
                 low_memory = False,
                 fitness=None,
                 random_state=None,
+                custom_params = None,
                 save_model=None):
         self._population_size = population_size
         self._generations = MAX_INT if generations == 0 else generations
@@ -128,6 +130,7 @@ class Gentic(object):
         self._fitness = fitness
         self._n_jobs = n_jobs
         self._backup_cycle = backup_cycle
+        self._custom_params = custom_params
         self._low_memory = low_memory
         self._verbose = verbose
         self._is_save = is_save
@@ -212,6 +215,7 @@ class Gentic(object):
         params['factor_sets'] = self._factor_sets
         params['fitness'] = self._fitness
         params['backup_cycle'] = self._backup_cycle
+        params['custom_params'] = self._custom_params
     
         self._programs = []
         self._best_programs = None
@@ -291,7 +295,8 @@ class Gentic(object):
             
             #保存每代信息
             if self._is_save:
-                self._save_model(gen, self._rootid,  self._session, self._run_details['best_programs'][-1])
+                self._save_model(gen, self._rootid,  self._session, self._run_details['best_programs'][-1], 
+                                 self._custom_params)
             
             if self._greater_is_better:
                 best_fitness = fitness[np.argmax(fitness)]
