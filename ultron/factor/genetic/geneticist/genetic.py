@@ -250,7 +250,17 @@ class Gentic(object):
             #剔除无效因子
             population = [program for program in population if program._is_valid]
             
-            self._programs.append(population)
+            
+            
+            if self._best_programs is None:
+                self._programs.append(population)
+            else:
+                identification_dict = {}
+                valid_prorams = list(np.concatenate([population,self._best_programs]))
+                for program in valid_prorams:
+                    identification_dict[program._identification] = program
+                valid_prorams = list(identification_dict.values())
+                self._programs.append(valid_prorams)
             
             '''
             if not self._low_memory:
