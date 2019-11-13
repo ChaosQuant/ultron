@@ -45,7 +45,7 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
         else:
             method = random_state.uniform()
             parent, parent_index = _tournament(copy(parents))
-            if method < method_probs[3]: # point_mutation
+            if method < method_probs[0]: # # crossover
                 donor, donor_index = _tournament(copy(parents))
                 program, removed, remains = parent.crossover(donor._program, random_state)
                 genome = {'method':'Crossover',
@@ -53,17 +53,17 @@ def parallel_evolve(n_programs, parents, total_data, seeds, greater_is_better, g
                          'parent_nodes':removed,
                          'donor_idx':donor_index,
                          'donor_nodes':remains}
-            elif method < method_probs[0]: # crossover
+            elif method < method_probs[1]: # subtree_mutation
                 program, removed, _ = parent.subtree_mutation(random_state)
                 genome = {'method': 'Subtree Mutation',
                           'parent_idx': parent_index,
                           'parent_nodes': removed}
-            elif method < method_probs[1]: #  subtree_mutation 
+            elif method < method_probs[2]: # hoist_mutation
                 program, removed = parent.hoist_mutation(random_state)
                 genome = {'method': 'Hoist Mutation',
                           'parent_idx': parent_index,
                           'parent_nodes': removed}
-            elif method < method_probs[2]: # hoist_mutation
+            elif method < method_probs[3]: # point_mutation
                 program,mutated = parent.point_mutation(random_state)
                 genome = {'method': 'Point Mutation',
                           'parent_idx': parent_index,
@@ -102,9 +102,11 @@ class Gentic(object):
                 verbose=1,
                 is_save=1,
                 rootid=0,
+                session=0,
                 standard_score=2,# None代表 根据tournament_size保留种群  standard_score保留种群
                 out_dir='result',
                 backup_cycle = 0,# 后备数据周期，主要用于在时间序列上的问题
+                convergence = None, # 收敛值，若为None，则不需要收敛值。
                 low_memory = False,
                 fitness=None,
                 random_state=None,
@@ -135,11 +137,12 @@ class Gentic(object):
         self._verbose = verbose
         self._is_save = is_save
         self._out_dir = out_dir
+        self._convergence = convergence
         self._rootid = int(time.time() * 1000000 + datetime.datetime.now().microsecond) if rootid == 0 else rootid
-        self._session = int(time.time() * 1000000 + datetime.datetime.now().microsecond)
+        self._session = int(time.time() * 1000000 + datetime.datetime.now().microsecond) if session == 0 else session
         self._save_model = self.save_model if save_model is None else save_model
-            
-        MLog().config(name='Gentic')
+        self._con_time = 0
+        self._best_fitness = 0
      
     
     def save_model(self, gen, rootid,  session, best_programs):
@@ -294,7 +297,6 @@ class Gentic(object):
             fitness = [program._raw_fitness for program in self._best_programs]
             self._run_details['generation'].append(gen)
             self._run_details['average_fitness'].append(np.mean(fitness))
-            self._run_details['best_fitness'].append(self._best_programs[0]._raw_fitness)
             generation_time = time.time() - start_time
             self._run_details['generation_time'].append(generation_time)
             self._run_details['best_programs'].append(self._best_programs)
@@ -316,3 +318,19 @@ class Gentic(object):
                 best_fitness = fitness[np.argmin(fitness)]
                 if best_fitness <= self._stopping_criteria:
                     break
+           
+            self._run_details['best_fitness'].append(best_fitness)
+            # 收敛值判断
+            if self._convergence is None or gen ==0:
+                continue
+            d_value = np.mean(fitness) - self._run_details['average_fitness'][gen - 1]
+            MLog().write().info('d_value:%f,convergence:%f,con_time:%d' % (d_value, self._convergence, self._con_time))
+            if abs(d_value) < self._convergence:
+                self._con_time += 1
+                if self._con_time > 5:
+                    break
+            else:
+                self._con_time
+            
+            
+            

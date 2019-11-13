@@ -10,6 +10,8 @@ from . operators import crossover_sets,mutation_sets,operators_sets,calc_factor,
 import warnings
 warnings.filterwarnings("ignore")
 
+ABS_FLOAT = 0.000001
+
 class Program(object):
     
     def __init__(self, init_depth, method,
@@ -19,7 +21,7 @@ class Program(object):
                  operators_set,
                  gen,
                  fitness,
-                 coverage_rate=0.5,
+                 coverage_rate=0.8,
                  n_features=0,
                  program=None,
                  parents=None):
@@ -266,6 +268,10 @@ class Program(object):
                 factor_data = calc_factor(expression, total_data, indexs, key)
                 #切割掉备份周期
                 factor_data = factor_data.replace([np.inf, -np.inf], np.nan)
+                #处理因子暴露度为0 
+                factor_data['transformed'] = np.where(np.abs(factor_data.transformed.values
+                                                            ) > 0.000001,factor_data.transformed.values, 
+                                                      np.nan)
                 factor_data = factor_data.loc[factor_data.index.unique()[backup_cycle:]]
                 ##检测覆盖率
                 coverage_rate  =  1 - factor_data['transformed'].isna().sum() / len(factor_data['transformed'])
@@ -281,3 +287,5 @@ class Program(object):
         except Exception as e:
             self._raw_fitness = default_value
             self._is_valid = False
+            print(str(e))
+            #MLog().write().error('%s'%(str(e)))
