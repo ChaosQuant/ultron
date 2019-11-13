@@ -108,7 +108,7 @@ class Operators(object):
     def __init__(self):
        
         # 时间序列默认周期列表
-        self._ts_period = [1, 3, 5, 7 ,9]
+        self._ts_period = [2, 4, 6, 8 ,10]
         
         self._init_cs()
         self._init_ts()
