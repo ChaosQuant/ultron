@@ -136,7 +136,7 @@ setup(
         'SQLAlchemy==1.3.1',
         'uqer==1.3.3',
         'redis==3.2.0',
-        'celery==4.3.0',
+        'celery==5.2.2',
         'gevent==1.4.0',
         'Twisted==18.9.0',
         'protobuf==3.7.0',
