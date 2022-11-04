@@ -138,7 +138,7 @@ setup(
         'redis==3.2.0',
         'celery==4.3.0',
         'gevent==1.4.0',
-        'Twisted==18.9.0',
+        'Twisted==22.10.0',
         'protobuf==3.7.0',
         'vine==1.3.0',
         'cvxopt>=1.2.3',
